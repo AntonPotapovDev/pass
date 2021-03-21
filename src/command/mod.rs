@@ -1,3 +1,5 @@
+pub mod builders;
+
 use crate::model::PassListModel;
 
 pub trait Command {
@@ -9,6 +11,20 @@ pub struct List;
 impl Command for List {
     fn execute(&self, model: &mut PassListModel) {
         model.iter().for_each(|(key, _value)| println!("{}", key));
+    }
+}
+
+pub struct Show {
+    pub key: String,
+}
+
+impl Command for Show {
+    fn execute(&self, model: &mut PassListModel) {
+        if let Some(pass) = model.get(&self.key) {
+            println!("{}", pass);
+        } else {
+            println!("No passwords for that key");
+        }
     }
 }
 

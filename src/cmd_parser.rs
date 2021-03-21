@@ -1,38 +1,18 @@
-use crate::command::{self, Command};
+use crate::command::builders;
 
 const CMD_ADD: &str = "add";
 const CMD_REMOVE: &str = "rm";
 const CMD_UPDATE: &str = "update";
 const CMD_LIST: &str = "list";
+const CMD_SHOW: &str = "show";
 
-pub fn parse_command(cmd: &str, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+pub fn resolve_command(cmd: &str) -> Result<Box<dyn builders::CmdBuilder>, ()> {
     match cmd {
-        CMD_ADD => {
-            if args.len() < 2 { Err(()) }
-            else {
-                let key = std::mem::replace(&mut args[0], String::new());
-                let pass = std::mem::replace(&mut args[1], String::new());
-                Ok(Box::new(command::Add{ key, pass }))
-            }
-        },
-        CMD_REMOVE => {
-            if args.len() < 1 { Err(()) }
-            else {
-                let key = std::mem::replace(&mut args[0], String::new());
-                Ok(Box::new(command::Remove{ key }))
-            }
-        },
-        CMD_UPDATE => {
-            if args.len() < 2 { Err(()) }
-            else {
-                let key = std::mem::replace(&mut args[0], String::new());
-                let pass = std::mem::replace(&mut args[1], String::new());
-                Ok(Box::new(command::Update{ key, pass }))
-            }
-        },
-        CMD_LIST => {
-            Ok(Box::new(command::List))
-        },
+        CMD_ADD => Ok(Box::new(builders::AddBuilder)),
+        CMD_REMOVE => Ok(Box::new(builders::RemoveBuilder)),
+        CMD_UPDATE => Ok(Box::new(builders::UpdateBuilder)),
+        CMD_LIST => Ok(Box::new(builders::ListBuilder)),
+        CMD_SHOW => Ok(Box::new(builders::ShowBuilder)),
         _ => Err(()),
     }
 }

@@ -4,7 +4,8 @@ mod cmd_parser;
 
 use std::env::Args;
 
-use cmd_parser::parse_command;
+use cmd_parser::resolve_command;
+use command::builders::CmdBuilder;
 
 const FILENAME: &str = ".data";
 
@@ -12,24 +13,39 @@ fn main() {
     let mut model = model::from_file(FILENAME).unwrap();
 
     match parse_args(std::env::args()) {
-        Ok((cmd, args)) => {
-            match parse_command(&cmd, args) {
+        Ok((cmd, args)) =>  match resolve_command(&cmd) {
+            Ok(builder) => match builder.build(args) {
                 Ok(command) => command.execute(&mut model),
-                Err(_) => println!("Unknown command"),
-            }
+                Err(_) => command_usage(&cmd, builder)
+            },
+            Err(_) => unknown_command(&cmd),
         },
-        Err(_) => println!("Usage: pass <command> [args]"),
+        Err(_) => print_usage(),
     }
 
     model::serialize(model, FILENAME).unwrap();
 }
 
-fn parse_args(args: Args) -> Result<(String, Vec<String>), ()> {
+fn parse_args(mut args: Args) -> Result<(String, Vec<String>), ()> {
+    args.next();
+
     let mut args = args.collect::<Vec<String>>();
 
-    if args.len() < 2 { return Err(()); }
+    if args.len() < 1 { return Err(()); }
 
     let cmd = args.remove(0);
 
     Ok((cmd, args))
+}
+
+fn print_usage() {
+    println!("Usage: pass <command> [args]");
+}
+
+fn command_usage(cmd_name: &str, cmd: Box<dyn CmdBuilder>) {
+    println!("Usage for \"{}\": {}", cmd_name, cmd.cmd_usage());
+}
+
+fn unknown_command(cmd: &str) {
+    println!("Unknown command: \"{}\"", cmd)
 }
