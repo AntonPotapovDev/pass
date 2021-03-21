@@ -9,17 +9,7 @@ pub fn from_file(filename: &str) -> Result<PassListModel, std::io::Error> {
             let mut model = PassListModel::new();
 
             io::BufReader::new(file).lines().for_each(|l| {
-                let mut key_value = l
-                    .unwrap()
-                    .split("\u{0}")
-                    .map(|x| String::from(x))
-                    .collect::<Vec<String>>();
-
-                assert_eq!(key_value.len(), 2);
-
-                let key = std::mem::replace(&mut key_value[0], String::new());
-                let value = std::mem::replace(&mut key_value[1], String::new());
-
+                let (key, value) = pair_from_line(&l.unwrap());
                 model.insert(key, value);
             });
 
@@ -27,6 +17,20 @@ pub fn from_file(filename: &str) -> Result<PassListModel, std::io::Error> {
         },
         Err(err) => Err(err),
     }
+}
+
+pub fn pair_from_line(l: &str) -> (String, String) {
+    let mut key_value = l
+        .split("\u{0}")
+        .map(|x| String::from(x))
+        .collect::<Vec<String>>();
+
+    assert_eq!(key_value.len(), 2);
+
+    let key = std::mem::replace(&mut key_value[0], String::new());
+    let value = std::mem::replace(&mut key_value[1], String::new());
+
+    (key, value)
 }
 
 pub fn serialize(model: PassListModel, filename: &str) -> Result<(), std::io::Error> {

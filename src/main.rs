@@ -1,6 +1,7 @@
 mod model;
 mod command;
 mod cmd_parser;
+mod impexp;
 
 use std::env::{self, Args};
 
@@ -61,6 +62,8 @@ fn help() {
     println!("  {:6} - update password", CMD_UPDATE);
     println!("  {:6} - show all keys", CMD_LIST);
     println!("  {:6} - show password by key", CMD_SHOW);
+    println!("  {:6} - export encrypted passwords", CMD_EXPORT);
+    println!("  {:6} - import encrypted passwords", CMD_IMPORT);
 }
 
 fn command_usage(cmd_name: &str, cmd: Box<dyn CmdBuilder>) {

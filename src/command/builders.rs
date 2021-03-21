@@ -74,6 +74,36 @@ impl CmdBuilder for UpdateBuilder {
     }
 }
 
+pub struct ExportBuilder;
+impl CmdBuilder for ExportBuilder {
+    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        if check(&args, 2) {
+            let dest = std::mem::replace(&mut args[0], String::new());
+            let key_dest = std::mem::replace(&mut args[1], String::new());
+            Ok(Box::new(super::Export{ dest, key_dest }))
+        } else { Err(()) }
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from("<export_path> <key_path>")
+    }
+}
+
+pub struct ImportBuilder;
+impl CmdBuilder for ImportBuilder {
+    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        if check(&args, 2) {
+            let src = std::mem::replace(&mut args[0], String::new());
+            let key_src = std::mem::replace(&mut args[1], String::new());
+            Ok(Box::new(super::Import{ src, key_src }))
+        } else { Err(()) }
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from("<import_path> <key_path>")
+    }
+}
+
 fn check(args: &Vec<String>, expected: usize) -> bool {
     args.len() >= expected
 }
