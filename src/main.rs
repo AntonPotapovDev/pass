@@ -2,7 +2,7 @@ mod model;
 mod command;
 mod cmd_parser;
 
-use std::env::Args;
+use std::env::{self, Args};
 
 use cmd_parser::*;
 use command::builders::CmdBuilder;
@@ -10,32 +10,47 @@ use command::builders::CmdBuilder;
 const FILENAME: &str = ".data";
 
 fn main() {
-    let mut model = model::from_file(FILENAME).unwrap();
-
     match parse_args(std::env::args()) {
-        Ok((cmd, args)) =>  match resolve_command(&cmd) {
+        Ok(ParseResult{cmd, args, path}) => match resolve_command(&cmd) {
             Ok(builder) => match builder.build(args) {
-                Ok(command) => command.execute(&mut model),
+                Ok(command) => {
+                    let mut model = model::from_file(&path).unwrap();
+                    command.execute(&mut model);
+                    model::serialize(model, &path).unwrap();
+                },
                 Err(_) => command_usage(&cmd, builder)
             },
             Err(_) => unknown_command(&cmd),
         },
         Err(_) => help(),
     }
-
-    model::serialize(model, FILENAME).unwrap();
 }
 
-fn parse_args(mut args: Args) -> Result<(String, Vec<String>), ()> {
+struct ParseResult {
+    cmd: String,
+    args: Vec<String>,
+    path: String,
+}
+
+fn parse_args(mut args: Args) -> Result<ParseResult, ()> {
     args.next();
 
     let mut args = args.collect::<Vec<String>>();
 
     if args.len() < 1 { return Err(()); }
 
+    let mut dir = env::current_exe().unwrap();
+    dir.pop();
+    dir.push(FILENAME);
+    let path = String::from(dir.to_str().unwrap());
+
     let cmd = args.remove(0);
 
-    Ok((cmd, args))
+    Ok(ParseResult {
+        cmd,
+        args,
+        path,
+    })
 }
 
 fn help() {
