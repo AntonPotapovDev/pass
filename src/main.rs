@@ -4,7 +4,7 @@ mod cmd_parser;
 
 use std::env::Args;
 
-use cmd_parser::resolve_command;
+use cmd_parser::*;
 use command::builders::CmdBuilder;
 
 const FILENAME: &str = ".data";
@@ -20,7 +20,7 @@ fn main() {
             },
             Err(_) => unknown_command(&cmd),
         },
-        Err(_) => print_usage(),
+        Err(_) => help(),
     }
 
     model::serialize(model, FILENAME).unwrap();
@@ -38,12 +38,18 @@ fn parse_args(mut args: Args) -> Result<(String, Vec<String>), ()> {
     Ok((cmd, args))
 }
 
-fn print_usage() {
+fn help() {
     println!("Usage: pass <command> [args]");
+    println!("Supported commands:");
+    println!("  {:6} - add new password", CMD_ADD);
+    println!("  {:6} - remove password", CMD_REMOVE);
+    println!("  {:6} - update password", CMD_UPDATE);
+    println!("  {:6} - show all keys", CMD_LIST);
+    println!("  {:6} - show password by key", CMD_SHOW);
 }
 
 fn command_usage(cmd_name: &str, cmd: Box<dyn CmdBuilder>) {
-    println!("Usage for \"{}\": {}", cmd_name, cmd.cmd_usage());
+    println!("Usage for \"{}\": {} {}", cmd_name, cmd_name, cmd.cmd_usage());
 }
 
 fn unknown_command(cmd: &str) {

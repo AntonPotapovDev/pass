@@ -33,7 +33,7 @@ impl CmdBuilder for ShowBuilder {
 pub struct AddBuilder;
 impl CmdBuilder for AddBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 1) {
+        if check(&args, 2) {
             let key = std::mem::replace(&mut args[0], String::new());
             let pass = std::mem::replace(&mut args[1], String::new());
             Ok(Box::new(super::Add{ key, pass }))
@@ -62,7 +62,7 @@ impl CmdBuilder for RemoveBuilder {
 pub struct UpdateBuilder;
 impl CmdBuilder for UpdateBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 1) {
+        if check(&args, 2) {
             let key = std::mem::replace(&mut args[0], String::new());
             let pass = std::mem::replace(&mut args[1], String::new());
             Ok(Box::new(super::Update{ key, pass }))
@@ -75,5 +75,5 @@ impl CmdBuilder for UpdateBuilder {
 }
 
 fn check(args: &Vec<String>, expected: usize) -> bool {
-    args.len() < expected
+    args.len() >= expected
 }

@@ -1,10 +1,10 @@
 use crate::command::builders;
 
-const CMD_ADD: &str = "add";
-const CMD_REMOVE: &str = "rm";
-const CMD_UPDATE: &str = "update";
-const CMD_LIST: &str = "list";
-const CMD_SHOW: &str = "show";
+pub const CMD_ADD: &str = "add";
+pub const CMD_REMOVE: &str = "rm";
+pub const CMD_UPDATE: &str = "update";
+pub const CMD_LIST: &str = "list";
+pub const CMD_SHOW: &str = "show";
 
 pub fn resolve_command(cmd: &str) -> Result<Box<dyn builders::CmdBuilder>, ()> {
     match cmd {
