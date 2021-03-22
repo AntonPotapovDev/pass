@@ -123,7 +123,7 @@ fn build_from_one<T: 'static + From::<String> + Command>(args: &mut Vec<String>)
 }
 
 fn build_from_two<T: 'static + From::<(String, String)> + Command>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()> {
-    match args.len() >= 1 {
+    match args.len() >= 2 {
         true => {
             let first = std::mem::replace(&mut args[0], String::new());
             let second = std::mem::replace(&mut args[1], String::new());
