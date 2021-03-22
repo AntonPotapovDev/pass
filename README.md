@@ -3,7 +3,7 @@ A simple command line password manager written in Rust.<br>
 It offers command-based control. You can add, remove, update, copy your passwords and more.
 Most importantly, you can import/export your encrypted passwords to move them securely from system to system.
 
-You can see a complete list of supported commands by simply calling the application with no arguments::
+You can see a complete list of supported commands by simply calling the application with no arguments:
 ```batchfile
 pass
 ```
