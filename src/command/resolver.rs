@@ -10,6 +10,9 @@ pub const CMD_IMPORT: &str = "import";
 pub const CMD_RENAME: &str = "rename";
 pub const CMD_CLEAR: &str = "clear";
 pub const CMD_COPY: &str = "copy";
+pub const CMD_MULTIADD: &str = "madd";
+pub const CMD_MULTIREMOVE: &str = "mrm";
+pub const CMD_MULTIUPDATE: &str = "mupd";
 
 pub fn resolve_command(cmd: &str) -> Result<Box<dyn builders::CmdBuilder>, ()> {
     match cmd {
@@ -23,6 +26,9 @@ pub fn resolve_command(cmd: &str) -> Result<Box<dyn builders::CmdBuilder>, ()> {
         CMD_RENAME => Ok(Box::new(builders::RenameBuilder)),
         CMD_CLEAR => Ok(Box::new(builders::ClearBuilder)),
         CMD_COPY => Ok(Box::new(builders::CopyBuilder)),
+        CMD_MULTIADD => Ok(Box::new(builders::MultiAddBuilder)),
+        CMD_MULTIREMOVE => Ok(Box::new(builders::MultiRemoveBuilder)),
+        CMD_MULTIUPDATE => Ok(Box::new(builders::MultiUpdateBuilder)),
         _ => Err(()),
     }
 }

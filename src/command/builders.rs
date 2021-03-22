@@ -115,6 +115,40 @@ impl CmdBuilder for CopyBuilder {
     }
 }
 
+pub struct MultiAddBuilder;
+impl CmdBuilder for MultiAddBuilder {
+    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        build_from_list_with_tail::<super::MultiAdd>(&mut args)
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from("<key> [, <key>, <key>, ... ] <pass>")
+    }
+}
+
+pub struct MultiRemoveBuilder;
+impl CmdBuilder for MultiRemoveBuilder {
+    fn build(&self, args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        if args.len() < 1 { return Err(()); }
+        Ok(Box::new(super::MultiRemove{ keys: args }))
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from("<key> [, <key>, <key>, ... ]")
+    }
+}
+
+pub struct MultiUpdateBuilder;
+impl CmdBuilder for MultiUpdateBuilder {
+    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        build_from_list_with_tail::<super::MultiUpdate>(&mut args)
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from("<key> [, <key>, <key>, ... ] <pass>")
+    }
+}
+
 fn build_from_one<T: 'static + From::<String> + Command>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()> {
     match args.len() >= 1 {
         true => Ok(Box::new(T::from(std::mem::replace(&mut args[0], String::new())))),
@@ -131,4 +165,20 @@ fn build_from_two<T: 'static + From::<(String, String)> + Command>(args: &mut Ve
         }
         false => Err(()),
     }
+}
+
+fn build_from_list_with_tail<T: 'static + From::<(Vec<String>, String)> + Command>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()> {
+    if args.len() < 2 { return Err(()); }
+
+    let mut keys = Vec::with_capacity(args.len() - 1);
+
+    let mut i = 0;
+    loop {
+        if i == args.len() - 1 { break; }
+        let key = std::mem::replace(&mut args[i], String::new());
+        keys.push(key);
+        i += 1;
+    }
+
+    Ok(Box::new(T::from((keys, args.last().unwrap().clone()))))
 }

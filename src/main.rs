@@ -68,6 +68,9 @@ fn help() {
     println!("  {:6} - rename specified key", CMD_RENAME);
     println!("  {:6} - clear password list", CMD_CLEAR);
     println!("  {:6} - copy password to clipboard", CMD_COPY);
+    println!("  {:6} - add one password for multiple keys", CMD_MULTIADD);
+    println!("  {:6} - remove multiple passwords", CMD_MULTIREMOVE);
+    println!("  {:6} - update multiple passwords with one value", CMD_MULTIUPDATE);
 }
 
 fn command_usage(cmd_name: &str, cmd: Box<dyn CmdBuilder>) {

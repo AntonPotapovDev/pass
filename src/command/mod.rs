@@ -3,7 +3,7 @@ pub mod resolver;
 
 use clipboard::{ClipboardContext, ClipboardProvider};
 
-use crate::context::Context;
+use crate::context::{self, Context, PassListModel};
 use crate::impexp;
 
 pub trait Command {
@@ -129,17 +129,9 @@ impl Command for Import {
             },
         };
 
-        let collisions = imorted_model.iter()
-            .filter(|(key, _value)| context.model.contains_key(*key))
-            .map(|(key, _value)| key.clone())
-            .collect::<Vec<String>>();
-
-        match collisions.len() > 0 {
-            true => {
-                msg::collision_detected();
-                collisions.iter().for_each(|c| println!("{}", c));
-            },
-            false => imorted_model.into_iter().for_each(|(key, value)| { context.model.insert(key, value); }),
+        if let Err(collisions) = context::merge_models(imorted_model, &mut context.model) {
+            msg::collision_detected();
+            collisions.iter().for_each(|c| println!("{}", c));
         }
     }
 }
@@ -197,6 +189,59 @@ impl Command for Copy {
 impl From<String> for Copy {
     fn from(key: String) -> Copy {
         Copy { key }
+    }
+}
+
+pub struct MultiAdd {
+    pub keys: Vec<String>,
+    pub pass: String,
+}
+
+impl Command for MultiAdd {
+    fn execute(&self, context: &mut Context) {
+        let mut extension = PassListModel::new();
+        self.keys.iter().for_each(|k| { extension.insert(k.clone(), self.pass.clone()); });
+
+        if let Err(collisions) = context::merge_models(extension, &mut context.model) {
+            msg::collision_detected();
+            collisions.iter().for_each(|c| println!("{}", c));
+        }
+    }
+}
+
+impl From::<(Vec<String>, String)> for MultiAdd {
+    fn from((keys, pass): (Vec<String>, String)) -> MultiAdd {
+        MultiAdd { keys, pass }
+    }
+}
+
+pub struct MultiRemove {
+    pub keys: Vec<String>,
+}
+
+impl Command for MultiRemove {
+    fn execute(&self, context: &mut Context) {
+        self.keys.iter().for_each(|key| { context.model.remove(key); });
+    }
+}
+
+pub struct MultiUpdate {
+    pub keys: Vec<String>,
+    pub pass: String,
+}
+
+impl Command for MultiUpdate {
+    fn execute(&self, context: &mut Context) {
+        for key in &self.keys {
+            if !context.model.contains_key(key) { continue; }
+            context.model.insert(key.clone(), self.pass.clone());
+        }
+    }
+}
+
+impl From::<(Vec<String>, String)> for MultiUpdate {
+    fn from((keys, pass): (Vec<String>, String)) -> MultiUpdate {
+        MultiUpdate { keys, pass }
     }
 }
 
