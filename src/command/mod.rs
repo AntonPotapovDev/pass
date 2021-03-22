@@ -1,9 +1,10 @@
 pub mod builders;
+pub mod resolver;
 
 use clipboard::{ClipboardContext, ClipboardProvider};
 
 use crate::context::Context;
-use crate::impexp::{self, export::ExportErr, import::ImportError};
+use crate::impexp;
 
 pub trait Command {
     fn execute(&self, model: &mut Context);
@@ -23,11 +24,16 @@ pub struct Show {
 
 impl Command for Show {
     fn execute(&self, context: &mut Context) {
-        if let Some(pass) = context.model.get(&self.key) {
-            println!("{}", pass);
-        } else {
-            println!("No passwords for that key");
+        match context.model.get(&self.key) {
+            Some(pass) => println!("{}", pass),
+            None => msg::no_such_key(),
         }
+    }
+}
+
+impl From<String> for Show {
+    fn from(key: String) -> Show {
+        Show { key }
     }
 }
 
@@ -38,11 +44,16 @@ pub struct Add {
 
 impl Command for Add {
     fn execute(&self, context: &mut Context) {
-        if context.model.contains_key(&self.key) {
-            println!("Password for the given key is already exist");
-        } else {
-            context.model.insert(self.key.clone(), self.pass.clone());
+        match context.model.contains_key(&self.key) {
+            true => msg::already_exist(),
+            false => { context.model.insert(self.key.clone(), self.pass.clone()); },
         }
+    }
+}
+
+impl From<(String, String)> for Add {
+    fn from((key, pass): (String, String)) -> Add {
+        Add { key, pass }
     }
 }
 
@@ -52,11 +63,15 @@ pub struct Remove {
 
 impl Command for Remove {
     fn execute(&self, context: &mut Context) {
-        if context.model.contains_key(&self.key) {
-            context.model.remove(&self.key);
-        } else {
-            println!("No passwords for that key");
+        if let None = context.model.remove(&self.key) {
+            msg::no_such_key()
         }
+    }
+}
+
+impl From<String> for Remove {
+    fn from(key: String) -> Remove {
+        Remove { key }
     }
 }
 
@@ -67,11 +82,16 @@ pub struct Update {
 
 impl Command for Update {
     fn execute(&self, context: &mut Context) {
-        if context.model.contains_key(&self.key) {
-            context.model.insert(self.key.clone(), self.pass.clone());
-        } else {
-            println!("No passwords for that key");
+        match context.model.contains_key(&self.key) {
+            true => { context.model.insert(self.key.clone(), self.pass.clone()); },
+            false => msg::no_such_key(),
         }
+    }
+}
+
+impl From<(String, String)> for Update {
+    fn from((key, pass): (String, String)) -> Update {
+        Update { key, pass }
     }
 }
 
@@ -83,12 +103,14 @@ pub struct Export {
 impl Command for Export {
     fn execute(&self, context: &mut Context) {
         if let Err(err) = impexp::export(&context.data_file_path, &self.dest, &self.key_dest) {
-            match err {
-                ExportErr::EncryptionError => println!("Failed to encrypt data"),
-                ExportErr::FSError => println!("Failed to write export data"),
-                ExportErr::KeyGenError => println!("Failed to generate encryption keys"),
-            }
+            msg::export_error(err);
         }
+    }
+}
+
+impl From<(String, String)> for Export {
+    fn from((dest, key_dest): (String, String)) -> Export {
+        Export { dest, key_dest }
     }
 }
 
@@ -102,12 +124,7 @@ impl Command for Import {
         let imorted_model = match impexp::import(&self.src, &self.key_src) {
             Ok(m) => m,
             Err(err) => {
-                match err {
-                    ImportError::DeryptionError => println!("Failed to decrypt file"),
-                    ImportError::FSError => println!("Failed to read import data"),
-                    ImportError::KeyGenError => println!("Failed to build encryption key"),
-                    ImportError::InvalidFile => println!("Invalid import file"),
-                }
+                msg::import_error(err);
                 return;
             },
         };
@@ -117,13 +134,19 @@ impl Command for Import {
             .map(|(key, _value)| key.clone())
             .collect::<Vec<String>>();
 
-        if collisions.len() > 0 {
-            println!("Key collisions detected, command aborted");
-            println!("Resolve collisions for the following keys:");
-            collisions.iter().for_each(|c| println!("{}", c));
-        } else {
-            imorted_model.into_iter().for_each(|(key, value)| { context.model.insert(key, value); });
+        match collisions.len() > 0 {
+            true => {
+                msg::collision_detected();
+                collisions.iter().for_each(|c| println!("{}", c));
+            },
+            false => imorted_model.into_iter().for_each(|(key, value)| { context.model.insert(key, value); }),
         }
+    }
+}
+
+impl From<(String, String)> for Import {
+    fn from((src, key_src): (String, String)) -> Import {
+        Import { src, key_src }
     }
 }
 
@@ -136,8 +159,14 @@ impl Command for Rename {
     fn execute(&self, context: &mut Context) {
         match context.model.remove(&self.old) {
             Some(value) => { context.model.insert(self.new.clone(), value); },
-            None => println!("No passwords for that key"),
+            None => msg::no_such_key(),
         }
+    }
+}
+
+impl From<(String, String)> for Rename {
+    fn from((old, new): (String, String)) -> Rename {
+        Rename { old, new }
     }
 }
 
@@ -160,7 +189,47 @@ impl Command for Copy {
                 let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
                 ctx.set_contents(value.clone()).unwrap();
             },
-            None => println!("No passwords for that key"),
+            None => msg::no_such_key(),
+        }
+    }
+}
+
+impl From<String> for Copy {
+    fn from(key: String) -> Copy {
+        Copy { key }
+    }
+}
+
+mod msg {
+    use crate::impexp::{import::ImportError, export::ExportError};
+
+    pub fn no_such_key() {
+        println!("No passwords for that key");
+    }
+
+    pub fn already_exist() {
+        println!("Password for the given key is already exist");
+    }
+
+    pub fn collision_detected() {
+        println!("Key collisions detected, command aborted");
+        println!("Resolve collisions for the following keys:");
+    }
+
+    pub fn export_error(err: ExportError) {
+        match err {
+            ExportError::EncryptionError => println!("Failed to encrypt data"),
+            ExportError::FSError => println!("Failed to write export data"),
+            ExportError::KeyGenError => println!("Failed to generate encryption keys"),
+        }
+    }
+
+    pub fn import_error(err: ImportError) {
+        match err {
+            ImportError::DeryptionError => println!("Failed to decrypt file"),
+            ImportError::FSError => println!("Failed to read import data"),
+            ImportError::KeyGenError => println!("Failed to build encryption key"),
+            ImportError::InvalidFile => println!("Invalid import file"),
         }
     }
 }

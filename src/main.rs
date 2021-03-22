@@ -1,12 +1,10 @@
 mod context;
 mod command;
-mod cmd_parser;
 mod impexp;
 
 use std::env::{self, Args};
 
-use cmd_parser::*;
-use command::builders::CmdBuilder;
+use command::{resolver::*, builders::CmdBuilder};
 use context::Context;
 
 const FILENAME: &str = ".data";

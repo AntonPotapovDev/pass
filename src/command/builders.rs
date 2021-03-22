@@ -19,10 +19,7 @@ impl CmdBuilder for ListBuilder {
 pub struct ShowBuilder;
 impl CmdBuilder for ShowBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 1) {
-            let key = std::mem::replace(&mut args[0], String::new());
-            Ok(Box::new(super::Show{ key }))
-        } else { Err(()) }
+        build_from_one::<super::Show>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -33,11 +30,7 @@ impl CmdBuilder for ShowBuilder {
 pub struct AddBuilder;
 impl CmdBuilder for AddBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 2) {
-            let key = std::mem::replace(&mut args[0], String::new());
-            let pass = std::mem::replace(&mut args[1], String::new());
-            Ok(Box::new(super::Add{ key, pass }))
-        } else { Err(()) }
+        build_from_two::<super::Add>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -48,10 +41,7 @@ impl CmdBuilder for AddBuilder {
 pub struct RemoveBuilder;
 impl CmdBuilder for RemoveBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 1) {
-            let key = std::mem::replace(&mut args[0], String::new());
-            Ok(Box::new(super::Remove{ key }))
-        } else { Err(()) }
+        build_from_one::<super::Remove>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -62,11 +52,7 @@ impl CmdBuilder for RemoveBuilder {
 pub struct UpdateBuilder;
 impl CmdBuilder for UpdateBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 2) {
-            let key = std::mem::replace(&mut args[0], String::new());
-            let pass = std::mem::replace(&mut args[1], String::new());
-            Ok(Box::new(super::Update{ key, pass }))
-        } else { Err(()) }
+        build_from_two::<super::Update>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -77,11 +63,7 @@ impl CmdBuilder for UpdateBuilder {
 pub struct ExportBuilder;
 impl CmdBuilder for ExportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 2) {
-            let dest = std::mem::replace(&mut args[0], String::new());
-            let key_dest = std::mem::replace(&mut args[1], String::new());
-            Ok(Box::new(super::Export{ dest, key_dest }))
-        } else { Err(()) }
+        build_from_two::<super::Export>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -92,11 +74,7 @@ impl CmdBuilder for ExportBuilder {
 pub struct ImportBuilder;
 impl CmdBuilder for ImportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 2) {
-            let src = std::mem::replace(&mut args[0], String::new());
-            let key_src = std::mem::replace(&mut args[1], String::new());
-            Ok(Box::new(super::Import{ src, key_src }))
-        } else { Err(()) }
+        build_from_two::<super::Import>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -107,11 +85,7 @@ impl CmdBuilder for ImportBuilder {
 pub struct RenameBuilder;
 impl CmdBuilder for RenameBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 2) {
-            let old = std::mem::replace(&mut args[0], String::new());
-            let new = std::mem::replace(&mut args[1], String::new());
-            Ok(Box::new(super::Rename{ old, new }))
-        } else { Err(()) }
+        build_from_two::<super::Rename>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -133,10 +107,7 @@ impl CmdBuilder for ClearBuilder {
 pub struct CopyBuilder;
 impl CmdBuilder for CopyBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        if check(&args, 1) {
-            let key = std::mem::replace(&mut args[0], String::new());
-            Ok(Box::new(super::Copy{ key }))
-        } else { Err(()) }
+        build_from_one::<super::Copy>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -144,6 +115,20 @@ impl CmdBuilder for CopyBuilder {
     }
 }
 
-fn check(args: &Vec<String>, expected: usize) -> bool {
-    args.len() >= expected
+fn build_from_one<T: 'static + From::<String> + Command>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()> {
+    match args.len() >= 1 {
+        true => Ok(Box::new(T::from(std::mem::replace(&mut args[0], String::new())))),
+        false => Err(()),
+    }
+}
+
+fn build_from_two<T: 'static + From::<(String, String)> + Command>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()> {
+    match args.len() >= 1 {
+        true => {
+            let first = std::mem::replace(&mut args[0], String::new());
+            let second = std::mem::replace(&mut args[1], String::new());
+            Ok(Box::new(T::from((first, second))))
+        }
+        false => Err(()),
+    }
 }

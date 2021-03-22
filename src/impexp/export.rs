@@ -5,13 +5,13 @@ use rsa_export::Encode;
 use std::fs::File;
 use std::io::{Read, Write};
 
-pub enum ExportErr {
+pub enum ExportError {
     FSError,
     KeyGenError,
     EncryptionError,
 }
 
-pub fn export(src: &str, dst: &str, key: &str) -> Result<(), ExportErr> {
+pub fn export(src: &str, dst: &str, key: &str) -> Result<(), ExportError> {
     let mut file = File::open(src).unwrap();
 
     let mut data = vec![];
@@ -23,7 +23,7 @@ pub fn export(src: &str, dst: &str, key: &str) -> Result<(), ExportErr> {
 
     let private_key = match RSAPrivateKey::new(&mut rng, bits) {
         Ok(key) => key,
-        Err(_) => return Err(ExportErr::KeyGenError),
+        Err(_) => return Err(ExportError::KeyGenError),
     };
 
     let public_key = RSAPublicKey::from(&private_key);
@@ -32,13 +32,13 @@ pub fn export(src: &str, dst: &str, key: &str) -> Result<(), ExportErr> {
     let padding = PaddingScheme::new_pkcs1v15_encrypt();
     let export_data = match public_key.encrypt(&mut rng, padding, &data) {
         Ok(ed) => ed,
-        Err(_) => return Err(ExportErr::EncryptionError),
+        Err(_) => return Err(ExportError::EncryptionError),
     };
 
     // export data
     match File::create(dst) {
         Ok(mut f) => f.write(&export_data[..]).unwrap(),
-        Err(_) => return Err(ExportErr::FSError),
+        Err(_) => return Err(ExportError::FSError),
     };
 
     // export key
@@ -46,7 +46,7 @@ pub fn export(src: &str, dst: &str, key: &str) -> Result<(), ExportErr> {
 
     match File::create(key) {
         Ok(mut f) => f.write(&encoded[..]).unwrap(),
-        Err(_) => return Err(ExportErr::FSError),
+        Err(_) => return Err(ExportError::FSError),
     };
 
     Ok(())
