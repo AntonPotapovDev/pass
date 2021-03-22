@@ -67,6 +67,9 @@ fn help() {
     println!("  {:6} - show password by key", CMD_SHOW);
     println!("  {:6} - export encrypted passwords", CMD_EXPORT);
     println!("  {:6} - import encrypted passwords", CMD_IMPORT);
+    println!("  {:6} - rename specified key", CMD_RENAME);
+    println!("  {:6} - clear password list", CMD_CLEAR);
+    println!("  {:6} - copy password to clipboard", CMD_COPY);
 }
 
 fn command_usage(cmd_name: &str, cmd: Box<dyn CmdBuilder>) {

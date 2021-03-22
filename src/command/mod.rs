@@ -1,5 +1,7 @@
 pub mod builders;
 
+use clipboard::{ClipboardContext, ClipboardProvider};
+
 use crate::context::Context;
 use crate::impexp::{self, export::ExportErr, import::ImportError};
 
@@ -121,6 +123,44 @@ impl Command for Import {
             collisions.iter().for_each(|c| println!("{}", c));
         } else {
             imorted_model.into_iter().for_each(|(key, value)| { context.model.insert(key, value); });
+        }
+    }
+}
+
+pub struct Rename {
+    pub old: String,
+    pub new: String,
+}
+
+impl Command for Rename {
+    fn execute(&self, context: &mut Context) {
+        match context.model.remove(&self.old) {
+            Some(value) => { context.model.insert(self.new.clone(), value); },
+            None => println!("No passwords for that key"),
+        }
+    }
+}
+
+pub struct Clear;
+
+impl Command for Clear {
+    fn execute(&self, context: &mut Context) {
+        context.model.clear();
+    }
+}
+
+pub struct Copy {
+    pub key: String,
+}
+
+impl Command for Copy {
+    fn execute(&self, context: &mut Context) {
+        match context.model.get(&self.key) {
+            Some(value) => {
+                let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+                ctx.set_contents(value.clone()).unwrap();
+            },
+            None => println!("No passwords for that key"),
         }
     }
 }

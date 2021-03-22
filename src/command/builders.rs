@@ -104,6 +104,46 @@ impl CmdBuilder for ImportBuilder {
     }
 }
 
+pub struct RenameBuilder;
+impl CmdBuilder for RenameBuilder {
+    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        if check(&args, 2) {
+            let old = std::mem::replace(&mut args[0], String::new());
+            let new = std::mem::replace(&mut args[1], String::new());
+            Ok(Box::new(super::Rename{ old, new }))
+        } else { Err(()) }
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from("<old_key> <new_key>")
+    }
+}
+
+pub struct ClearBuilder;
+impl CmdBuilder for ClearBuilder {
+    fn build(&self, mut _args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        Ok(Box::new(super::Clear))
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::new()
+    }
+}
+
+pub struct CopyBuilder;
+impl CmdBuilder for CopyBuilder {
+    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        if check(&args, 1) {
+            let key = std::mem::replace(&mut args[0], String::new());
+            Ok(Box::new(super::Copy{ key }))
+        } else { Err(()) }
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from("<key_to_copy>")
+    }
+}
+
 fn check(args: &Vec<String>, expected: usize) -> bool {
     args.len() >= expected
 }
