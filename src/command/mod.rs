@@ -1,19 +1,17 @@
 pub mod builders;
 
-use std::env;
-
-use crate::model::PassListModel;
+use crate::context::Context;
 use crate::impexp::{self, export::ExportErr, import::ImportError};
 
 pub trait Command {
-    fn execute(&self, model: &mut PassListModel);
+    fn execute(&self, model: &mut Context);
 }
 
 pub struct List;
 
 impl Command for List {
-    fn execute(&self, model: &mut PassListModel) {
-        model.iter().for_each(|(key, _value)| println!("{}", key));
+    fn execute(&self, context: &mut Context) {
+        context.model.iter().for_each(|(key, _value)| println!("{}", key));
     }
 }
 
@@ -22,8 +20,8 @@ pub struct Show {
 }
 
 impl Command for Show {
-    fn execute(&self, model: &mut PassListModel) {
-        if let Some(pass) = model.get(&self.key) {
+    fn execute(&self, context: &mut Context) {
+        if let Some(pass) = context.model.get(&self.key) {
             println!("{}", pass);
         } else {
             println!("No passwords for that key");
@@ -37,11 +35,11 @@ pub struct Add {
 }
 
 impl Command for Add {
-    fn execute(&self, model: &mut PassListModel) {
-        if model.contains_key(&self.key) {
+    fn execute(&self, context: &mut Context) {
+        if context.model.contains_key(&self.key) {
             println!("Password for the given key is already exist");
         } else {
-            model.insert(self.key.clone(), self.pass.clone());
+            context.model.insert(self.key.clone(), self.pass.clone());
         }
     }
 }
@@ -51,9 +49,9 @@ pub struct Remove {
 }
 
 impl Command for Remove {
-    fn execute(&self, model: &mut PassListModel) {
-        if model.contains_key(&self.key) {
-            model.remove(&self.key);
+    fn execute(&self, context: &mut Context) {
+        if context.model.contains_key(&self.key) {
+            context.model.remove(&self.key);
         } else {
             println!("No passwords for that key");
         }
@@ -66,9 +64,9 @@ pub struct Update {
 }
 
 impl Command for Update {
-    fn execute(&self, model: &mut PassListModel) {
-        if model.contains_key(&self.key) {
-            model.insert(self.key.clone(), self.pass.clone());
+    fn execute(&self, context: &mut Context) {
+        if context.model.contains_key(&self.key) {
+            context.model.insert(self.key.clone(), self.pass.clone());
         } else {
             println!("No passwords for that key");
         }
@@ -81,13 +79,8 @@ pub struct Export {
 }
 
 impl Command for Export {
-    fn execute(&self, _model: &mut PassListModel) {
-        // TODO: make possible to bring model file path to this context
-        let mut dir = env::current_exe().unwrap();
-        dir.pop();
-        dir.push(".data");
-
-        if let Err(err) = impexp::export(dir.to_str().unwrap(), &self.dest, &self.key_dest) {
+    fn execute(&self, context: &mut Context) {
+        if let Err(err) = impexp::export(&context.data_file_path, &self.dest, &self.key_dest) {
             match err {
                 ExportErr::EncryptionError => println!("Failed to encrypt data"),
                 ExportErr::FSError => println!("Failed to write export data"),
@@ -103,21 +96,22 @@ pub struct Import {
 }
 
 impl Command for Import {
-    fn execute(&self, model: &mut PassListModel) {
+    fn execute(&self, context: &mut Context) {
         let imorted_model = match impexp::import(&self.src, &self.key_src) {
             Ok(m) => m,
             Err(err) => {
                 match err {
-                    ImportError::DeryptionError => println!("Failed to encrypt file"),
+                    ImportError::DeryptionError => println!("Failed to decrypt file"),
                     ImportError::FSError => println!("Failed to read import data"),
                     ImportError::KeyGenError => println!("Failed to build encryption key"),
+                    ImportError::InvalidFile => println!("Invalid import file"),
                 }
                 return;
             },
         };
 
         let collisions = imorted_model.iter()
-            .filter(|(key, _value)| model.contains_key(*key))
+            .filter(|(key, _value)| context.model.contains_key(*key))
             .map(|(key, _value)| key.clone())
             .collect::<Vec<String>>();
 
@@ -126,7 +120,7 @@ impl Command for Import {
             println!("Resolve collisions for the following keys:");
             collisions.iter().for_each(|c| println!("{}", c));
         } else {
-            imorted_model.into_iter().for_each(|(key, value)| { model.insert(key, value); });
+            imorted_model.into_iter().for_each(|(key, value)| { context.model.insert(key, value); });
         }
     }
 }

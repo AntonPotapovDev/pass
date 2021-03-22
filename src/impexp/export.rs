@@ -30,29 +30,24 @@ pub fn export(src: &str, dst: &str, key: &str) -> Result<(), ExportErr> {
 
     // encrypt
     let padding = PaddingScheme::new_pkcs1v15_encrypt();
-
     let export_data = match public_key.encrypt(&mut rng, padding, &data) {
         Ok(ed) => ed,
         Err(_) => return Err(ExportErr::EncryptionError),
     };
 
     // export data
-    let mut file = match File::create(dst) {
-        Ok(f) => f,
+    match File::create(dst) {
+        Ok(mut f) => f.write(&export_data[..]).unwrap(),
         Err(_) => return Err(ExportErr::FSError),
     };
-
-    file.write(&export_data[..]).unwrap();
 
     // export key
     let encoded = private_key.as_pkcs1().unwrap();
 
-    let mut file = match File::create(key) {
-        Ok(f) => f,
+    match File::create(key) {
+        Ok(mut f) => f.write(&encoded[..]).unwrap(),
         Err(_) => return Err(ExportErr::FSError),
     };
-
-    file.write(&encoded[..]).unwrap();
 
     Ok(())
 }

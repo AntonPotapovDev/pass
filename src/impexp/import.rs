@@ -1,6 +1,6 @@
 use rsa::{RSAPrivateKey, PaddingScheme};
 
-use crate::model::{self, PassListModel};
+use crate::context::{self, PassListModel};
 
 use std::fs::File;
 use std::io::Read;
@@ -9,6 +9,7 @@ pub enum ImportError {
     FSError,
     KeyGenError,
     DeryptionError,
+    InvalidFile,
 }
 
 pub fn import(data_path: &str, key_path: &str) -> Result<PassListModel, ImportError> {
@@ -37,21 +38,10 @@ pub fn import(data_path: &str, key_path: &str) -> Result<PassListModel, ImportEr
         Err(_) => return Err(ImportError::DeryptionError),
     };
 
-    let lines = String::from_utf8(dec_data)
-        .unwrap()
-        .split("\n")
-        .map(|x| String::from(x))
-        .filter(|x| !x.is_empty())
-        .collect::<Vec<String>>();
-
-    let mut model = PassListModel::new();
-
-    lines.iter().for_each(|l| {
-        let (key, value) = model::pair_from_line(l);
-        model.insert(key, value);
-    });
-
-    Ok(model)
+    match context::model_from_string(String::from_utf8(dec_data).unwrap()) {
+        Ok(model) => Ok(model),
+        Err(_) => Err(ImportError::InvalidFile),
+    }
 }
 
 fn read_file(path: &str) -> Result<Vec<u8>, ()> {

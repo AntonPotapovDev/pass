@@ -1,4 +1,4 @@
-mod model;
+mod context;
 mod command;
 mod cmd_parser;
 mod impexp;
@@ -7,6 +7,7 @@ use std::env::{self, Args};
 
 use cmd_parser::*;
 use command::builders::CmdBuilder;
+use context::Context;
 
 const FILENAME: &str = ".data";
 
@@ -15,9 +16,11 @@ fn main() {
         Ok(ParseResult{cmd, args, path}) => match resolve_command(&cmd) {
             Ok(builder) => match builder.build(args) {
                 Ok(command) => {
-                    let mut model = model::from_file(&path).unwrap();
-                    command.execute(&mut model);
-                    model::serialize(model, &path).unwrap();
+                    let mut context = Context::from_file(&path).unwrap();
+
+                    command.execute(&mut context);
+
+                    context.flush().unwrap();
                 },
                 Err(_) => command_usage(&cmd, builder)
             },
