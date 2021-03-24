@@ -3,6 +3,7 @@ pub mod resolver;
 
 mod commands;
 mod encryption_strategy;
+mod dialog;
 mod msg;
 
 pub use commands::*;

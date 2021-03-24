@@ -1,5 +1,5 @@
 use crate::context::Context;
-use super::{Command, msg};
+use super::{Command, msg, dialog};
 
 use clipboard::{ClipboardContext, ClipboardProvider};
 
@@ -32,21 +32,23 @@ impl From<String> for Show {
 
 pub struct Add {
     pub key: String,
-    pub pass: String,
 }
 
 impl Command for Add {
     fn execute(&self, context: &mut Context) {
         match context.model.contains_key(&self.key) {
             true => msg::already_exist(),
-            false => { context.model.insert(self.key.clone(), self.pass.clone()); },
+            false => match dialog::ask_for_password(true) {
+                Ok(pass) => { context.model.insert(self.key.clone(), pass); },
+                Err(err) => msg::pass_read_error(err),
+            }
         }
     }
 }
 
-impl From<(String, String)> for Add {
-    fn from((key, pass): (String, String)) -> Add {
-        Add { key, pass }
+impl From<String> for Add {
+    fn from(key: String) -> Add {
+        Add { key }
     }
 }
 
@@ -56,8 +58,13 @@ pub struct Remove {
 
 impl Command for Remove {
     fn execute(&self, context: &mut Context) {
-        if let None = context.model.remove(&self.key) {
-            msg::no_such_key()
+        match context.model.contains_key(&self.key) {
+            true => match dialog::confirm(msg::strings::RM) {
+                Ok(true) => { context.model.remove(&self.key); },
+                Err(_) => msg::input_failed(),
+                _ => (),
+            },
+            false => msg::no_such_key(),
         }
     }
 }
@@ -70,21 +77,23 @@ impl From<String> for Remove {
 
 pub struct Update {
     pub key: String,
-    pub pass: String,
 }
 
 impl Command for Update {
     fn execute(&self, context: &mut Context) {
         match context.model.contains_key(&self.key) {
-            true => { context.model.insert(self.key.clone(), self.pass.clone()); },
+            true => match dialog::ask_for_password(true) {
+                Ok(pass) => { context.model.insert(self.key.clone(), pass); },
+                Err(err) => msg::pass_read_error(err),
+            },
             false => msg::no_such_key(),
         }
     }
 }
 
-impl From<(String, String)> for Update {
-    fn from((key, pass): (String, String)) -> Update {
-        Update { key, pass }
+impl From<String> for Update {
+    fn from(key: String) -> Update {
+        Update { key }
     }
 }
 
@@ -112,7 +121,10 @@ pub struct Clear;
 
 impl Command for Clear {
     fn execute(&self, context: &mut Context) {
-        context.model.clear();
+        match dialog::confirm(msg::strings::CLEAR) {
+            Ok(answer) => if answer { context.model.clear(); },
+            Err(_) => msg::input_failed(),
+        }
     }
 }
 

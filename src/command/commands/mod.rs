@@ -8,4 +8,5 @@ pub use misc::*;
 
 use super::Command;
 use super::msg;
+use super::dialog;
 use super::encryption_strategy;

@@ -3,6 +3,7 @@ use std::io::{Read, Write};
 
 use crate::encryption;
 use super::msg;
+use super::dialog;
 
 pub trait EncryptionStrategy {
     fn encrypt(&self, data: &Vec<u8>) -> Result<Vec<u8>, ()>;
@@ -55,22 +56,26 @@ impl EncryptionStrategy for KeyBased {
     }
 }
 
-pub struct PassBased {
-    pass: String,
-}
-
-impl From<String> for PassBased {
-    fn from(pass: String) -> PassBased {
-        PassBased { pass }
-    }
-}
+pub struct PassBased;
 
 impl EncryptionStrategy for PassBased {
     fn encrypt(&self, data: &Vec<u8>) -> Result<Vec<u8>, ()> {
-        encryption::pass_based::encrypt(data, &self.pass)
+        match dialog::ask_for_password(true) {
+            Ok(pass) => encryption::pass_based::encrypt(data, &pass),
+            Err(err) => {
+                msg::pass_read_error(err);
+                Err(())
+            },
+        }
     }
 
     fn decrypt(&self, data: &Vec<u8>) -> Result<Vec<u8>, ()> {
-        encryption::pass_based::decrypt(data, &self.pass)
+        match dialog::ask_for_password(false) {
+            Ok(pass) => encryption::pass_based::decrypt(data, &pass),
+            Err(err) => {
+                msg::pass_read_error(err);
+                Err(())
+            },
+        }
     }
 }

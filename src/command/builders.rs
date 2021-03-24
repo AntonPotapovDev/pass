@@ -30,11 +30,11 @@ impl CmdBuilder for ShowBuilder {
 pub struct AddBuilder;
 impl CmdBuilder for AddBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_two::<super::Add>(&mut args)
+        build_from_one::<super::Add>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key> <password>")
+        String::from("<key>")
     }
 }
 
@@ -52,11 +52,11 @@ impl CmdBuilder for RemoveBuilder {
 pub struct UpdateBuilder;
 impl CmdBuilder for UpdateBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_two::<super::Update>(&mut args)
+        build_from_one::<super::Update>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key> <new_password>")
+        String::from("<key>")
     }
 }
 
@@ -85,22 +85,22 @@ impl CmdBuilder for RSAImportBuilder {
 pub struct PassBasedExportBuilder;
 impl CmdBuilder for PassBasedExportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp::<super::Export, encryption_strategy::PassBased>(&mut args)
+        build_impexp_pass_based::<super::Export>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<export_path> <password>")
+        String::from("<export_path>")
     }
 }
 
 pub struct PassBasedImportBuilder;
 impl CmdBuilder for PassBasedImportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp::<super::Import, encryption_strategy::PassBased>(&mut args)
+        build_impexp_pass_based::<super::Import>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<import_path> <password>")
+        String::from("<import_path>")
     }
 }
 
@@ -140,11 +140,11 @@ impl CmdBuilder for CopyBuilder {
 pub struct MultiAddBuilder;
 impl CmdBuilder for MultiAddBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_list_with_tail::<super::MultiAdd>(&mut args)
+        build_from_list::<super::MultiAdd>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key> [, <key>, <key>, ... ] <pass>")
+        String::from("<key> [, <key>, <key>, ... ]")
     }
 }
 
@@ -163,12 +163,16 @@ impl CmdBuilder for MultiRemoveBuilder {
 pub struct MultiUpdateBuilder;
 impl CmdBuilder for MultiUpdateBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_list_with_tail::<super::MultiUpdate>(&mut args)
+        build_from_list::<super::MultiUpdate>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key> [, <key>, <key>, ... ] <pass>")
+        String::from("<key> [, <key>, <key>, ... ]")
     }
+}
+
+fn unpack_one(args: &mut Vec<String>) -> String {
+    std::mem::replace(&mut args[0], String::new())
 }
 
 fn unpack_two(args: &mut Vec<String>) -> (String, String) {
@@ -180,7 +184,7 @@ fn unpack_two(args: &mut Vec<String>) -> (String, String) {
 fn build_from_one<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
     where T: 'static + From::<String> + Command {
     match args.len() >= 1 {
-        true => Ok(Box::new(T::from(std::mem::replace(&mut args[0], String::new())))),
+        true => Ok(Box::new(T::from(unpack_one(args)))),
         false => Err(()),
     }
 }
@@ -196,21 +200,12 @@ fn build_from_two<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
     }
 }
 
-fn build_from_list_with_tail<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
-    where T: 'static + From::<(Vec<String>, String)> + Command {
-    if args.len() < 2 { return Err(()); }
-
-    let mut keys = Vec::with_capacity(args.len() - 1);
-
-    let mut i = 0;
-    loop {
-        if i == args.len() - 1 { break; }
-        let key = std::mem::replace(&mut args[i], String::new());
-        keys.push(key);
-        i += 1;
-    }
-
-    Ok(Box::new(T::from((keys, args.last().unwrap().clone()))))
+fn build_from_list<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
+    where T: 'static + From::<Vec<String>> + Command {
+    match args.len() < 1 {
+        true => Err(()),
+        false => Ok(Box::new(T::from(args.clone()))), 
+    } 
 }
 
 fn build_impexp<C, S>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
@@ -220,6 +215,19 @@ fn build_impexp<C, S>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
         true => {
             let (data, key) = unpack_two(args);
             let strategy = Box::new(S::from(key));
+            let cmd = Box::new(C::from((data, strategy)));
+            Ok(cmd)
+        },
+        false => Err(())
+    }
+}
+
+fn build_impexp_pass_based<C>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
+    where C: 'static + From::<(String, Box::<dyn EncryptionStrategy>)> + Command {
+    match args.len() >= 1 {
+        true => {
+            let data = unpack_one(args);
+            let strategy = Box::new(encryption_strategy::PassBased);
             let cmd = Box::new(C::from((data, strategy)));
             Ok(cmd)
         },

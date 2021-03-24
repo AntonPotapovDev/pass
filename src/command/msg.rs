@@ -1,3 +1,5 @@
+use super::dialog::PassReadError;
+
 pub fn no_such_key() {
     println!("No passwords for that key");
 }
@@ -29,4 +31,21 @@ pub fn failed_reading(filename: &str) {
 
 pub fn bad_file() {
     println!("Invalid import file");
+}
+
+pub fn input_failed() {
+    println!("Could not read the input");
+}
+
+pub fn pass_read_error(err: PassReadError) {
+    match err {
+        PassReadError::SystemError => input_failed(),
+        PassReadError::ConfirmationError => println!("Password mismatch"),
+    }
+}
+
+pub mod strings {
+    pub const CLEAR: &str = "Are you sure you want to delete all your passwords?";
+    pub const RM: &str = "Are you sure you want to delete this password?";
+    pub const MRM: &str = "Are you sure you want to delete these passwords?";
 }
