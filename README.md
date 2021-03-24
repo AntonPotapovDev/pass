@@ -1,5 +1,6 @@
 # pass
 A simple command line password manager written in Rust.<br>
+
 It offers command-based control. You can add, remove, update, copy your passwords and more.
 Most importantly, you can import/export your encrypted passwords to move them securely from system to system.
 
@@ -7,6 +8,15 @@ You can see a complete list of supported commands by simply calling the applicat
 ```batchfile
 pass
 ```
+By default, for better usability, "pass" stores added passwords without encryption. For maximum security, you can export passwords after each session and import them before each session. The easiest way to do this is to use the `export`/`import` commands with the `-c` flag, which will clear all unencrypted data.
+```batchfile
+# decrypt and import your passwords, overwrite existing data
+pass import C:/folder/data -c
+
+# encrypt end export your passwords, remove original data
+pass export C:/folder/data -c
+```
+
 ## Building
 
 ### Debug build
