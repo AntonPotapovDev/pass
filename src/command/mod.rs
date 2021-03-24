@@ -5,6 +5,7 @@ mod commands;
 mod encryption_strategy;
 mod dialog;
 mod msg;
+mod merger;
 
 pub use commands::*;
 

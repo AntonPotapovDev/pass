@@ -1,5 +1,5 @@
 use crate::context::{self, Context};
-use super::{Command, msg, encryption_strategy::EncryptionStrategy};
+use super::{Command, msg, encryption_strategy::EncryptionStrategy, merger};
 
 use std::fs::File;
 use std::io::{Read, Write};
@@ -74,7 +74,7 @@ impl Command for Import {
             },
         };
 
-        let imorted_model = match context::model_from_string(str_model) {
+        let imported_model = match context::model_from_string(str_model) {
             Ok(m) => m,
             Err(_) => {
                 msg::bad_file();
@@ -83,13 +83,14 @@ impl Command for Import {
         };
 
         if self.clear {
-            context.model = imorted_model;
+            context.model = imported_model;
             return;
         }
 
-        if let Err(collisions) = context::safe_merge(imorted_model, &mut context.model) {
+        if let Err(collisions) = context::safe_merge(&imported_model, &mut context.model) {
             msg::collision_detected();
             collisions.iter().for_each(|c| println!("{}", c));
+            merger::interactive_merge(imported_model, &mut context.model);
         }
     }
 }

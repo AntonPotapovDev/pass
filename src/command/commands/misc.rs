@@ -1,5 +1,5 @@
 use crate::context::{self, Context, PassListModel};
-use super::{Command, msg, dialog};
+use super::{Command, msg, dialog, merger};
 
 pub struct MultiAdd {
     pub keys: Vec<String>,
@@ -19,9 +19,10 @@ impl Command for MultiAdd {
 
         self.keys.iter().for_each(|k| { extension.insert(k.clone(), pass.clone()); });
 
-        if let Err(collisions) = context::safe_merge(extension, &mut context.model) {
+        if let Err(collisions) = context::safe_merge(&extension, &mut context.model) {
             msg::collision_detected();
             collisions.iter().for_each(|c| println!("{}", c));
+            merger::interactive_merge(extension, &mut context.model);
         }
     }
 }

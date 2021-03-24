@@ -9,8 +9,7 @@ pub fn already_exist() {
 }
 
 pub fn collision_detected() {
-    println!("Key collisions detected, command aborted");
-    println!("Resolve collisions for the following keys:");
+    println!("Collisions found for the following keys:");
 }
 
 pub fn encryption_failed() {
@@ -48,4 +47,6 @@ pub mod strings {
     pub const CLEAR: &str = "Are you sure you want to delete all your passwords?";
     pub const RM: &str = "Are you sure you want to delete this password?";
     pub const MRM: &str = "Are you sure you want to delete these passwords?";
+    pub const CHOOSE_WAY: &str = "You can accept OLD values, NEW values, do detailed MERGE or ABORT command (O/N/M/A):";
+    pub const MERGE_HELP: &str = "Choose between OLD value and NEW for each collision:";
 }
