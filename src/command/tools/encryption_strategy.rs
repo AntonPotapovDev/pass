@@ -1,9 +1,7 @@
 use std::fs::File;
 use std::io::{Read, Write};
 
-use crate::encryption;
-use super::msg;
-use super::dialog;
+use super::{dialog, msg, encryption};
 
 pub trait EncryptionStrategy {
     fn encrypt(&self, data: &Vec<u8>) -> Result<Vec<u8>, ()>;

@@ -1,16 +1,5 @@
 pub mod builders;
 pub mod resolver;
 
-mod commands;
-mod encryption_strategy;
-mod dialog;
-mod msg;
-mod merger;
-
-pub use commands::*;
-
-use crate::context::Context;
-
-pub trait Command {
-    fn execute(&self, model: &mut Context);
-}
+mod definitions;
+mod tools;

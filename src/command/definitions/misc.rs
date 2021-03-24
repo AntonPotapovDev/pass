@@ -1,5 +1,9 @@
 use crate::context::{self, Context, PassListModel};
-use super::{Command, msg, dialog, merger};
+
+use super::{
+    Command,
+    tools::{msg, dialog, merger},
+};
 
 pub struct MultiAdd {
     pub keys: Vec<String>,

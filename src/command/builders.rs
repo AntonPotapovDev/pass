@@ -1,6 +1,15 @@
-use super::{Command, encryption_strategy::{self, EncryptionStrategy}};
+use super::{
+    definitions::*,
+    tools::encryption_strategy::{self, EncryptionStrategy},
+};
 
 const CLEAR_FLAG: &str = "-c";
+const SINGLE_KEY_USAGE: &str = "<key>";
+const KEY_LIST_USAGE: &str = "<key> [, <key>, <key>, ... ]";
+const IMPORT_PATH: &str = "<from_path>";
+const EXPORT_PATH: &str = "<export_path>";
+const KEY_PATH: &str = "<key_path>";
+const FLAG: &str = "[-c] (c - for clear)";
 
 pub trait CmdBuilder {
     fn build(&self, args: Vec<String>) -> Result<Box<dyn Command>, ()>;
@@ -10,7 +19,7 @@ pub trait CmdBuilder {
 pub struct ListBuilder;
 impl CmdBuilder for ListBuilder {
     fn build(&self, _args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        Ok(Box::new(super::List))
+        Ok(Box::new(List))
     }
 
     fn cmd_usage(&self) -> String {
@@ -21,95 +30,95 @@ impl CmdBuilder for ListBuilder {
 pub struct ShowBuilder;
 impl CmdBuilder for ShowBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_one::<super::Show>(&mut args)
+        build_from_one::<Show>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key>")
+        String::from(SINGLE_KEY_USAGE)
     }
 }
 
 pub struct AddBuilder;
 impl CmdBuilder for AddBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_one::<super::Add>(&mut args)
+        build_from_one::<Add>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key>")
+        String::from(SINGLE_KEY_USAGE)
     }
 }
 
 pub struct RemoveBuilder;
 impl CmdBuilder for RemoveBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_one::<super::Remove>(&mut args)
+        build_from_one::<Remove>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key_to_delete>")
+        String::from(SINGLE_KEY_USAGE)
     }
 }
 
 pub struct UpdateBuilder;
 impl CmdBuilder for UpdateBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_one::<super::Update>(&mut args)
+        build_from_one::<Update>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key>")
+        String::from(SINGLE_KEY_USAGE)
     }
 }
 
 pub struct RSAExportBuilder;
 impl CmdBuilder for RSAExportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp_key_based::<super::Export>(&mut args)
+        build_impexp_key_based::<Export>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<export_path> <key_path> [-c] (c - for clear)")
+        format!("{} {} {}", EXPORT_PATH, KEY_PATH, FLAG)
     }
 }
 
 pub struct RSAImportBuilder;
 impl CmdBuilder for RSAImportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp_key_based::<super::Import>(&mut args)
+        build_impexp_key_based::<Import>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<import_path> <key_path> [-c] (c - for clear)")
+        format!("{} {} {}", IMPORT_PATH, KEY_PATH, FLAG)
     }
 }
 
 pub struct PassBasedExportBuilder;
 impl CmdBuilder for PassBasedExportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp_pass_based::<super::Export>(&mut args)
+        build_impexp_pass_based::<Export>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<export_path> [-c] (c - for clear)")
+        format!("{} {}", EXPORT_PATH, FLAG)
     }
 }
 
 pub struct PassBasedImportBuilder;
 impl CmdBuilder for PassBasedImportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp_pass_based::<super::Import>(&mut args)
+        build_impexp_pass_based::<Import>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<import_path> [-c] (c - for clear)")
+        format!("{} {}", IMPORT_PATH, FLAG)
     }
 }
 
 pub struct RenameBuilder;
 impl CmdBuilder for RenameBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_two::<super::Rename>(&mut args)
+        build_from_two::<Rename>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -120,7 +129,7 @@ impl CmdBuilder for RenameBuilder {
 pub struct ClearBuilder;
 impl CmdBuilder for ClearBuilder {
     fn build(&self, mut _args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        Ok(Box::new(super::Clear))
+        Ok(Box::new(Clear))
     }
 
     fn cmd_usage(&self) -> String {
@@ -131,22 +140,22 @@ impl CmdBuilder for ClearBuilder {
 pub struct CopyBuilder;
 impl CmdBuilder for CopyBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_one::<super::Copy>(&mut args)
+        build_from_one::<Copy>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key_to_copy>")
+        String::from(SINGLE_KEY_USAGE)
     }
 }
 
 pub struct MultiAddBuilder;
 impl CmdBuilder for MultiAddBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_list::<super::MultiAdd>(&mut args)
+        build_from_list::<MultiAdd>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key> [, <key>, <key>, ... ]")
+        String::from(KEY_LIST_USAGE)
     }
 }
 
@@ -154,22 +163,22 @@ pub struct MultiRemoveBuilder;
 impl CmdBuilder for MultiRemoveBuilder {
     fn build(&self, args: Vec<String>) -> Result<Box<dyn Command>, ()> {
         if args.len() < 1 { return Err(()); }
-        Ok(Box::new(super::MultiRemove{ keys: args }))
+        Ok(Box::new(MultiRemove{ keys: args }))
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key> [, <key>, <key>, ... ]")
+        String::from(KEY_LIST_USAGE)
     }
 }
 
 pub struct MultiUpdateBuilder;
 impl CmdBuilder for MultiUpdateBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_list::<super::MultiUpdate>(&mut args)
+        build_from_list::<MultiUpdate>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<key> [, <key>, <key>, ... ]")
+        String::from(KEY_LIST_USAGE)
     }
 }
 

@@ -1,5 +1,9 @@
 use crate::context::{self, Context};
-use super::{Command, msg, encryption_strategy::EncryptionStrategy, merger};
+
+use super::{
+    Command,
+    tools::{msg, merger, encryption_strategy::EncryptionStrategy},
+};
 
 use std::fs::File;
 use std::io::{Read, Write};

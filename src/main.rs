@@ -1,6 +1,5 @@
 mod context;
 mod command;
-mod encryption;
 
 use std::env::{self, Args};
 

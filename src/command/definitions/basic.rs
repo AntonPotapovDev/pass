@@ -1,5 +1,9 @@
 use crate::context::Context;
-use super::{Command, msg, dialog};
+
+use super::{
+    Command,
+    tools::{msg, dialog},
+};
 
 use clipboard::{ClipboardContext, ClipboardProvider};
 
