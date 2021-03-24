@@ -1,5 +1,7 @@
 use super::{Command, encryption_strategy::{self, EncryptionStrategy}};
 
+const CLEAR_FLAG: &str = "-c";
+
 pub trait CmdBuilder {
     fn build(&self, args: Vec<String>) -> Result<Box<dyn Command>, ()>;
     fn cmd_usage(&self) -> String;
@@ -63,22 +65,22 @@ impl CmdBuilder for UpdateBuilder {
 pub struct RSAExportBuilder;
 impl CmdBuilder for RSAExportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp::<super::Export, encryption_strategy::KeyBased>(&mut args)
+        build_impexp_key_based::<super::Export>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<export_path> <key_path>")
+        String::from("<export_path> <key_path> [-c] (c - for clear)")
     }
 }
 
 pub struct RSAImportBuilder;
 impl CmdBuilder for RSAImportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp::<super::Import, encryption_strategy::KeyBased>(&mut args)
+        build_impexp_key_based::<super::Import>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<import_path> <key_path>")
+        String::from("<import_path> <key_path> [-c] (c - for clear)")
     }
 }
 
@@ -89,7 +91,7 @@ impl CmdBuilder for PassBasedExportBuilder {
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<export_path>")
+        String::from("<export_path> [-c] (c - for clear)")
     }
 }
 
@@ -100,7 +102,7 @@ impl CmdBuilder for PassBasedImportBuilder {
     }
 
     fn cmd_usage(&self) -> String {
-        String::from("<import_path>")
+        String::from("<import_path> [-c] (c - for clear)")
     }
 }
 
@@ -171,8 +173,8 @@ impl CmdBuilder for MultiUpdateBuilder {
     }
 }
 
-fn unpack_one(args: &mut Vec<String>) -> String {
-    std::mem::replace(&mut args[0], String::new())
+fn unpack_one(args: &mut Vec<String>, index: usize) -> String {
+    std::mem::replace(&mut args[index], String::new())
 }
 
 fn unpack_two(args: &mut Vec<String>) -> (String, String) {
@@ -184,7 +186,7 @@ fn unpack_two(args: &mut Vec<String>) -> (String, String) {
 fn build_from_one<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
     where T: 'static + From::<String> + Command {
     match args.len() >= 1 {
-        true => Ok(Box::new(T::from(unpack_one(args)))),
+        true => Ok(Box::new(T::from(unpack_one(args, 0)))),
         false => Err(()),
     }
 }
@@ -208,14 +210,14 @@ fn build_from_list<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
     } 
 }
 
-fn build_impexp<C, S>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
-    where C: 'static + From::<(String, Box::<dyn EncryptionStrategy>)> + Command,
-          S: 'static + From::<String> + EncryptionStrategy {
+fn build_impexp_key_based<C>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
+    where C: 'static + From::<(String, Box::<dyn EncryptionStrategy>, bool)> + Command {
     match args.len() >= 2 {
         true => {
             let (data, key) = unpack_two(args);
-            let strategy = Box::new(S::from(key));
-            let cmd = Box::new(C::from((data, strategy)));
+            let clear = if args.len() > 2 { &unpack_one(args, 2) == CLEAR_FLAG } else { false };
+            let strategy = Box::new(encryption_strategy::KeyBased::from(key));
+            let cmd = Box::new(C::from((data, strategy, clear)));
             Ok(cmd)
         },
         false => Err(())
@@ -223,12 +225,13 @@ fn build_impexp<C, S>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
 }
 
 fn build_impexp_pass_based<C>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
-    where C: 'static + From::<(String, Box::<dyn EncryptionStrategy>)> + Command {
+    where C: 'static + From::<(String, Box::<dyn EncryptionStrategy>, bool)> + Command {
     match args.len() >= 1 {
         true => {
-            let data = unpack_one(args);
+            let data = unpack_one(args, 0);
+            let clear = if args.len() > 1 { &unpack_one(args, 1) == CLEAR_FLAG } else { false };
             let strategy = Box::new(encryption_strategy::PassBased);
-            let cmd = Box::new(C::from((data, strategy)));
+            let cmd = Box::new(C::from((data, strategy, clear)));
             Ok(cmd)
         },
         false => Err(())

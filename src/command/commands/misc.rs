@@ -19,7 +19,7 @@ impl Command for MultiAdd {
 
         self.keys.iter().for_each(|k| { extension.insert(k.clone(), pass.clone()); });
 
-        if let Err(collisions) = context::merge_models(extension, &mut context.model) {
+        if let Err(collisions) = context::safe_merge(extension, &mut context.model) {
             msg::collision_detected();
             collisions.iter().for_each(|c| println!("{}", c));
         }

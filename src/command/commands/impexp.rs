@@ -7,6 +7,7 @@ use std::io::{Read, Write};
 pub struct Export {
     pub dest: String,
     pub encryption_strategy: Box<dyn EncryptionStrategy>,
+    pub clear: bool,
 }
 
 impl Command for Export {
@@ -25,7 +26,10 @@ impl Command for Export {
         };
 
         match File::create(&self.dest) {
-            Ok(mut f) => { f.write(&result).unwrap(); },
+            Ok(mut f) => {
+                f.write(&result).unwrap();
+                if self.clear { context.model.clear() }
+            },
             Err(_) => {
                 msg::failed_writing(&self.dest);
                 return;
@@ -34,15 +38,16 @@ impl Command for Export {
     }
 }
 
-impl From::<(String, Box::<dyn EncryptionStrategy>)> for Export {
-    fn from((dest, encryption_strategy): (String, Box::<dyn EncryptionStrategy>)) -> Export {
-        Export { dest, encryption_strategy }
+impl From::<(String, Box::<dyn EncryptionStrategy>, bool)> for Export {
+    fn from((dest, encryption_strategy, clear): (String, Box::<dyn EncryptionStrategy>, bool)) -> Export {
+        Export { dest, encryption_strategy, clear }
     }
 }
 
 pub struct Import {
     pub src: String,
     pub encryption_strategy: Box<dyn EncryptionStrategy>,
+    pub clear: bool,
 }
 
 impl Command for Import {
@@ -77,16 +82,21 @@ impl Command for Import {
             },
         };
 
-        if let Err(collisions) = context::merge_models(imorted_model, &mut context.model) {
+        if self.clear {
+            context.model = imorted_model;
+            return;
+        }
+
+        if let Err(collisions) = context::safe_merge(imorted_model, &mut context.model) {
             msg::collision_detected();
             collisions.iter().for_each(|c| println!("{}", c));
         }
     }
 }
 
-impl From::<(String, Box::<dyn EncryptionStrategy>)> for Import {
-    fn from((src, encryption_strategy): (String, Box::<dyn EncryptionStrategy>)) -> Import {
-        Import { src, encryption_strategy }
+impl From::<(String, Box::<dyn EncryptionStrategy>, bool)> for Import {
+    fn from((src, encryption_strategy, clear): (String, Box::<dyn EncryptionStrategy>, bool)) -> Import {
+        Import { src, encryption_strategy, clear }
     }
 }
 
