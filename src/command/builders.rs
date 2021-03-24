@@ -1,4 +1,4 @@
-use super::Command;
+use super::{Command, encryption_strategy::{self, EncryptionStrategy}};
 
 pub trait CmdBuilder {
     fn build(&self, args: Vec<String>) -> Result<Box<dyn Command>, ()>;
@@ -60,10 +60,10 @@ impl CmdBuilder for UpdateBuilder {
     }
 }
 
-pub struct ExportBuilder;
-impl CmdBuilder for ExportBuilder {
+pub struct RSAExportBuilder;
+impl CmdBuilder for RSAExportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_two::<super::Export>(&mut args)
+        build_impexp::<super::Export, encryption_strategy::KeyBased>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -71,14 +71,36 @@ impl CmdBuilder for ExportBuilder {
     }
 }
 
-pub struct ImportBuilder;
-impl CmdBuilder for ImportBuilder {
+pub struct RSAImportBuilder;
+impl CmdBuilder for RSAImportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_two::<super::Import>(&mut args)
+        build_impexp::<super::Import, encryption_strategy::KeyBased>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
         String::from("<import_path> <key_path>")
+    }
+}
+
+pub struct PassBasedExportBuilder;
+impl CmdBuilder for PassBasedExportBuilder {
+    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        build_impexp::<super::Export, encryption_strategy::PassBased>(&mut args)
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from("<export_path> <password>")
+    }
+}
+
+pub struct PassBasedImportBuilder;
+impl CmdBuilder for PassBasedImportBuilder {
+    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        build_impexp::<super::Import, encryption_strategy::PassBased>(&mut args)
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from("<import_path> <password>")
     }
 }
 
@@ -149,25 +171,33 @@ impl CmdBuilder for MultiUpdateBuilder {
     }
 }
 
-fn build_from_one<T: 'static + From::<String> + Command>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()> {
+fn unpack_two(args: &mut Vec<String>) -> (String, String) {
+    let first = std::mem::replace(&mut args[0], String::new());
+    let second = std::mem::replace(&mut args[1], String::new());
+    (first, second)
+}
+
+fn build_from_one<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
+    where T: 'static + From::<String> + Command {
     match args.len() >= 1 {
         true => Ok(Box::new(T::from(std::mem::replace(&mut args[0], String::new())))),
         false => Err(()),
     }
 }
 
-fn build_from_two<T: 'static + From::<(String, String)> + Command>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()> {
+fn build_from_two<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
+    where T: 'static + From::<(String, String)> + Command {
     match args.len() >= 2 {
         true => {
-            let first = std::mem::replace(&mut args[0], String::new());
-            let second = std::mem::replace(&mut args[1], String::new());
+            let (first, second) = unpack_two(args);
             Ok(Box::new(T::from((first, second))))
         }
         false => Err(()),
     }
 }
 
-fn build_from_list_with_tail<T: 'static + From::<(Vec<String>, String)> + Command>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()> {
+fn build_from_list_with_tail<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
+    where T: 'static + From::<(Vec<String>, String)> + Command {
     if args.len() < 2 { return Err(()); }
 
     let mut keys = Vec::with_capacity(args.len() - 1);
@@ -181,4 +211,18 @@ fn build_from_list_with_tail<T: 'static + From::<(Vec<String>, String)> + Comman
     }
 
     Ok(Box::new(T::from((keys, args.last().unwrap().clone()))))
+}
+
+fn build_impexp<C, S>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
+    where C: 'static + From::<(String, Box::<dyn EncryptionStrategy>)> + Command,
+          S: 'static + From::<String> + EncryptionStrategy {
+    match args.len() >= 2 {
+        true => {
+            let (data, key) = unpack_two(args);
+            let strategy = Box::new(S::from(key));
+            let cmd = Box::new(C::from((data, strategy)));
+            Ok(cmd)
+        },
+        false => Err(())
+    }
 }

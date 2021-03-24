@@ -1,6 +1,6 @@
 mod context;
 mod command;
-mod impexp;
+mod encryption;
 
 use std::env::{self, Args};
 
@@ -58,19 +58,21 @@ fn parse_args(mut args: Args) -> Result<ParseResult, ()> {
 fn help() {
     println!("Usage: pass <command> [args]");
     println!("Supported commands:");
-    println!("  {:6} - add new password", CMD_ADD);
-    println!("  {:6} - remove password", CMD_REMOVE);
-    println!("  {:6} - update password", CMD_UPDATE);
-    println!("  {:6} - show all keys", CMD_LIST);
-    println!("  {:6} - show password by key", CMD_SHOW);
-    println!("  {:6} - export encrypted passwords", CMD_EXPORT);
-    println!("  {:6} - import encrypted passwords", CMD_IMPORT);
-    println!("  {:6} - rename specified key", CMD_RENAME);
-    println!("  {:6} - clear password list", CMD_CLEAR);
-    println!("  {:6} - copy password to clipboard", CMD_COPY);
-    println!("  {:6} - add one password for multiple keys", CMD_MULTIADD);
-    println!("  {:6} - remove multiple passwords", CMD_MULTIREMOVE);
-    println!("  {:6} - update multiple passwords with one value", CMD_MULTIUPDATE);
+    println!("  {:10} - add new password", CMD_ADD);
+    println!("  {:10} - remove password", CMD_REMOVE);
+    println!("  {:10} - update password", CMD_UPDATE);
+    println!("  {:10} - show all keys", CMD_LIST);
+    println!("  {:10} - show password by key", CMD_SHOW);
+    println!("  {:10} - encrypt passwords using passphrase and export", CMD_EXPORT);
+    println!("  {:10} - import passwords and decrypt using passphrase", CMD_IMPORT);
+    println!("  {:10} - export rsa encrypted passwords", CMD_RSA_EXPORT);
+    println!("  {:10} - import rsa encrypted passwords", CMD_RSA_IMPORT);
+    println!("  {:10} - rename specified key", CMD_RENAME);
+    println!("  {:10} - clear password list", CMD_CLEAR);
+    println!("  {:10} - copy password to clipboard", CMD_COPY);
+    println!("  {:10} - add one password for multiple keys", CMD_MULTIADD);
+    println!("  {:10} - remove multiple passwords", CMD_MULTIREMOVE);
+    println!("  {:10} - update multiple passwords with one value", CMD_MULTIUPDATE);
 }
 
 fn command_usage(cmd_name: &str, cmd: Box<dyn CmdBuilder>) {
