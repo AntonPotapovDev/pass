@@ -1,6 +1,9 @@
 use super::{
     definitions::*,
-    tools::encryption_strategy::{self, EncryptionStrategy},
+    tools::{
+        encryption_strategy::{self, EncryptionStrategy},
+        msg,
+    },
 };
 
 const CLEAR_FLAG: &str = "-c";
@@ -150,8 +153,8 @@ impl CmdBuilder for CopyBuilder {
 
 pub struct MultiAddBuilder;
 impl CmdBuilder for MultiAddBuilder {
-    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_list::<MultiAdd>(&mut args)
+    fn build(&self, args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        build_from_list::<MultiAdd>(args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -173,8 +176,8 @@ impl CmdBuilder for MultiRemoveBuilder {
 
 pub struct MultiUpdateBuilder;
 impl CmdBuilder for MultiUpdateBuilder {
-    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_from_list::<MultiUpdate>(&mut args)
+    fn build(&self, args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        build_from_list::<MultiUpdate>(args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -211,11 +214,11 @@ fn build_from_two<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
     }
 }
 
-fn build_from_list<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
+fn build_from_list<T>(args: Vec<String>) -> Result<Box<dyn Command>, ()>
     where T: 'static + From::<Vec<String>> + Command {
     match args.len() < 1 {
         true => Err(()),
-        false => Ok(Box::new(T::from(args.clone()))), 
+        false => Ok(Box::new(T::from(args))), 
     } 
 }
 
@@ -224,6 +227,12 @@ fn build_impexp_key_based<C>(args: &mut Vec<String>) -> Result<Box<dyn Command>,
     match args.len() >= 2 {
         true => {
             let (data, key) = unpack_two(args);
+
+            if data == key {
+                msg::impexp_paths_error();
+                return Err(());
+            }
+
             let clear = if args.len() > 2 { &unpack_one(args, 2) == CLEAR_FLAG } else { false };
             let strategy = Box::new(encryption_strategy::KeyBased::from(key));
             let cmd = Box::new(C::from((data, strategy, clear)));

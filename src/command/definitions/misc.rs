@@ -44,10 +44,15 @@ pub struct MultiRemove {
 impl Command for MultiRemove {
     fn execute(&self, context: &mut Context) {
         match dialog::confirm(msg::strings::MRM) {
-            Ok(answer) => if answer {
-                self.keys.iter().for_each(|key|{ context.model.remove(key); });
-            },
+            Ok(true) => self.keys.iter().for_each(|key| {
+                if !context.model.contains_key(key) {
+                    msg::no_such_key_warning(key);
+                    return;
+                }
+                context.model.remove(key);
+            }),
             Err(_) => msg::input_failed(),
+            _ => (),
         }
     }
 }
@@ -67,7 +72,11 @@ impl Command for MultiUpdate {
         };
 
         for key in &self.keys {
-            if !context.model.contains_key(key) { continue; }
+            if !context.model.contains_key(key) {
+                msg::no_such_key_warning(key);
+                continue;
+            }
+
             context.model.insert(key.clone(), pass.clone());
         }
     }

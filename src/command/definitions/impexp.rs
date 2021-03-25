@@ -2,7 +2,7 @@ use crate::context::{self, Context};
 
 use super::{
     Command,
-    tools::{msg, merger, encryption_strategy::EncryptionStrategy},
+    tools::{msg, merger, encryption_strategy::{ESError, EncryptionStrategy}},
 };
 
 use std::fs::File;
@@ -23,10 +23,11 @@ impl Command for Export {
 
         let result = match self.encryption_strategy.encrypt(&data) {
             Ok(d) => d,
-            Err(_) => {
+            Err(ESError::EncryptionError) => {
                 msg::encryption_failed();
                 return;
             },
+            Err(ESError::InnerError) => return,
         };
 
         match File::create(&self.dest) {
@@ -72,10 +73,11 @@ impl Command for Import {
                     return;
                 },
             },
-            Err(_) => {
+            Err(ESError::EncryptionError) => {
                 msg::decryption_failed();
                 return;
             },
+            Err(ESError::InnerError) => return,
         };
 
         let imported_model = match context::model_from_string(str_model) {

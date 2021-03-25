@@ -9,7 +9,7 @@ pub fn interactive_merge(new: PassListModel, old: &mut PassListModel) {
         ResolveWay::Old => accept_old(new, old),
         ResolveWay::New => accept_new(new, old),
         ResolveWay::Merge => merge(new, old),
-        ResolveWay::Abort => (),
+        ResolveWay::Cancel => (),
     }
 }
 
@@ -17,7 +17,7 @@ enum ResolveWay {
     Old,
     New,
     Merge,
-    Abort,
+    Cancel,
 }
 
 fn choose_way() -> ResolveWay {
@@ -34,7 +34,7 @@ fn choose_way() -> ResolveWay {
             "o" => return ResolveWay::Old,
             "n" => return ResolveWay::New,
             "m" => return ResolveWay::Merge,
-            "a" => return ResolveWay::Abort,
+            "c" => return ResolveWay::Cancel,
             _ => (),
         }
     }
@@ -55,7 +55,7 @@ fn merge(new: PassListModel, old: &mut PassListModel) {
 
     new.into_iter().for_each(|(key, new_value)| {
         match old.get(&key) {
-            Some(old_value) => {
+            Some(old_value) => if old_value != &new_value {
                 let solved = ask_resolve(&key, old_value.clone(), new_value);
                 old.insert(key, solved);
             },

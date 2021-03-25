@@ -76,14 +76,17 @@ pub fn merge_models(f: &PassListModel, s: &mut PassListModel) {
     f.into_iter().for_each(|(key, value)| { s.insert(key.clone(), value.clone()); });
 }
 
-pub fn find_collisions(f: &PassListModel, s: &PassListModel) -> Vec<String> {
+pub fn find_collisions<'a>(f: &'a PassListModel, s: &PassListModel) -> Vec<&'a String> {
     f.iter()
-        .filter(|(key, _value)| s.contains_key(*key))
-        .map(|(key, _value)| key.clone())
-        .collect::<Vec<String>>()
+        .filter(|(key, value)| match s.get(*key) {
+            Some(v) => v != *value,
+            None => false,
+        })
+        .map(|(key, _value)| key)
+        .collect::<Vec<&'a String>>()
 }
 
-pub fn safe_merge(f: &PassListModel, s: &mut PassListModel) -> Result<(), Vec<String>> {
+pub fn safe_merge<'a>(f: &'a PassListModel, s: &mut PassListModel) -> Result<(), Vec<&'a String>> {
     let collisions = find_collisions(&f, s);
 
     match collisions.len() > 0 {

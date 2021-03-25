@@ -4,8 +4,20 @@ pub fn no_such_key() {
     println!("No passwords for that key");
 }
 
+pub fn no_such_key_warning(key: &str) {
+    println!("WARNING: no such key - {}", key);
+}
+
 pub fn already_exist() {
     println!("Password for the given key is already exist");
+}
+
+pub fn failed_renaming() {
+    println!("Could not use already existing key as new name");
+}
+
+pub fn impexp_paths_error() {
+    println!("Paths for data and key must differs");
 }
 
 pub fn collision_detected() {
@@ -47,6 +59,6 @@ pub mod strings {
     pub const CLEAR: &str = "Are you sure you want to delete all your passwords?";
     pub const RM: &str = "Are you sure you want to delete this password?";
     pub const MRM: &str = "Are you sure you want to delete these passwords?";
-    pub const CHOOSE_WAY: &str = "You can accept OLD values, NEW values, do detailed MERGE or ABORT command (O/N/M/A):";
+    pub const CHOOSE_WAY: &str = "You can accept OLD values, NEW values, do detailed MERGE or CANCEL command (O/N/M/C):";
     pub const MERGE_HELP: &str = "Choose between OLD value and NEW for each collision:";
 }

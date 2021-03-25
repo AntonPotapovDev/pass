@@ -11,7 +11,13 @@ pub struct List;
 
 impl Command for List {
     fn execute(&self, context: &mut Context) {
-        context.model.iter().for_each(|(key, _value)| println!("{}", key));
+        let mut list = context.model.iter()
+            .map(|(key, _value)| key)
+            .collect::<Vec<&String>>();
+
+        list.sort();
+        
+        list.iter().for_each(|e| println!("{}", e));
     }
 }
 
@@ -108,10 +114,18 @@ pub struct Rename {
 
 impl Command for Rename {
     fn execute(&self, context: &mut Context) {
-        match context.model.remove(&self.old) {
-            Some(value) => { context.model.insert(self.new.clone(), value); },
-            None => msg::no_such_key(),
+        if !context.model.contains_key(&self.old) {
+            msg::no_such_key();
+            return;
         }
+
+        if context.model.contains_key(&self.new) {
+            msg::failed_renaming();
+            return;
+        }
+
+        let value = context.model.remove(&self.old).unwrap();
+        context.model.insert(self.new.clone(), value);
     }
 }
 
