@@ -64,8 +64,6 @@ fn help() {
     println!("  {:10} - show password by key", CMD_SHOW);
     println!("  {:10} - encrypt passwords using passphrase and export", CMD_EXPORT);
     println!("  {:10} - import passwords and decrypt using passphrase", CMD_IMPORT);
-    println!("  {:10} - export rsa encrypted passwords", CMD_RSA_EXPORT);
-    println!("  {:10} - import rsa encrypted passwords", CMD_RSA_IMPORT);
     println!("  {:10} - rename specified key", CMD_RENAME);
     println!("  {:10} - clear password list", CMD_CLEAR);
     println!("  {:10} - copy password to clipboard", CMD_COPY);

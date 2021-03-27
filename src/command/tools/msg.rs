@@ -16,10 +16,6 @@ pub fn failed_renaming() {
     println!("Could not use already existing key as new name");
 }
 
-pub fn impexp_paths_error() {
-    println!("Paths for data and key must differs");
-}
-
 pub fn collision_detected() {
     println!("Collisions found for the following keys:");
 }

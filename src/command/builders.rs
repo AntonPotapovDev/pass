@@ -1,17 +1,11 @@
-use super::{
-    definitions::*,
-    tools::{
-        encryption_strategy::{self, EncryptionStrategy},
-        msg,
-    },
-};
+use super::definitions::*;
+
 
 const CLEAR_FLAG: &str = "-c";
 const SINGLE_KEY_USAGE: &str = "<key>";
 const KEY_LIST_USAGE: &str = "<key> [, <key>, <key>, ... ]";
 const IMPORT_PATH: &str = "<from_path>";
 const EXPORT_PATH: &str = "<export_path>";
-const KEY_PATH: &str = "<key_path>";
 const FLAG: &str = "[-c] (c - for clear)";
 
 pub trait CmdBuilder {
@@ -74,32 +68,10 @@ impl CmdBuilder for UpdateBuilder {
     }
 }
 
-pub struct RSAExportBuilder;
-impl CmdBuilder for RSAExportBuilder {
+pub struct ExportBuilder;
+impl CmdBuilder for ExportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp_key_based::<Export>(&mut args)
-    }
-
-    fn cmd_usage(&self) -> String {
-        format!("{} {} {}", EXPORT_PATH, KEY_PATH, FLAG)
-    }
-}
-
-pub struct RSAImportBuilder;
-impl CmdBuilder for RSAImportBuilder {
-    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp_key_based::<Import>(&mut args)
-    }
-
-    fn cmd_usage(&self) -> String {
-        format!("{} {} {}", IMPORT_PATH, KEY_PATH, FLAG)
-    }
-}
-
-pub struct PassBasedExportBuilder;
-impl CmdBuilder for PassBasedExportBuilder {
-    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp_pass_based::<Export>(&mut args)
+        build_impexp::<Export>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -107,10 +79,10 @@ impl CmdBuilder for PassBasedExportBuilder {
     }
 }
 
-pub struct PassBasedImportBuilder;
-impl CmdBuilder for PassBasedImportBuilder {
+pub struct ImportBuilder;
+impl CmdBuilder for ImportBuilder {
     fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
-        build_impexp_pass_based::<Import>(&mut args)
+        build_impexp::<Import>(&mut args)
     }
 
     fn cmd_usage(&self) -> String {
@@ -222,34 +194,13 @@ fn build_from_list<T>(args: Vec<String>) -> Result<Box<dyn Command>, ()>
     } 
 }
 
-fn build_impexp_key_based<C>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
-    where C: 'static + From::<(String, Box::<dyn EncryptionStrategy>, bool)> + Command {
-    match args.len() >= 2 {
-        true => {
-            let (data, key) = unpack_two(args);
-
-            if data == key {
-                msg::impexp_paths_error();
-                return Err(());
-            }
-
-            let clear = if args.len() > 2 { &unpack_one(args, 2) == CLEAR_FLAG } else { false };
-            let strategy = Box::new(encryption_strategy::KeyBased::from(key));
-            let cmd = Box::new(C::from((data, strategy, clear)));
-            Ok(cmd)
-        },
-        false => Err(())
-    }
-}
-
-fn build_impexp_pass_based<C>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
-    where C: 'static + From::<(String, Box::<dyn EncryptionStrategy>, bool)> + Command {
+fn build_impexp<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
+    where T: 'static + From::<(String, bool)> + Command {
     match args.len() >= 1 {
         true => {
             let data = unpack_one(args, 0);
             let clear = if args.len() > 1 { &unpack_one(args, 1) == CLEAR_FLAG } else { false };
-            let strategy = Box::new(encryption_strategy::PassBased);
-            let cmd = Box::new(C::from((data, strategy, clear)));
+            let cmd = Box::new(T::from((data, clear)));
             Ok(cmd)
         },
         false => Err(())

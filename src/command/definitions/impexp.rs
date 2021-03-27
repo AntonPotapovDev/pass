@@ -2,7 +2,7 @@ use crate::context::{self, Context};
 
 use super::{
     Command,
-    tools::{msg, merger, encryption_strategy::{ESError, EncryptionStrategy}},
+    tools::{msg, merger, encryption, dialog},
 };
 
 use std::fs::File;
@@ -10,7 +10,6 @@ use std::io::{Read, Write};
 
 pub struct Export {
     pub dest: String,
-    pub encryption_strategy: Box<dyn EncryptionStrategy>,
     pub clear: bool,
 }
 
@@ -21,13 +20,20 @@ impl Command for Export {
         let mut data = vec![];
         file.read_to_end(&mut data).unwrap();
 
-        let result = match self.encryption_strategy.encrypt(&data) {
+        let pass = match dialog::ask_for_password(true) {
+            Ok(p) => p,
+            Err(err) => {
+                msg::pass_read_error(err);
+                return;
+            }
+        };
+
+        let result = match encryption::encrypt(&data, &pass) {
             Ok(d) => d,
-            Err(ESError::EncryptionError) => {
+            Err(_) => {
                 msg::encryption_failed();
                 return;
             },
-            Err(ESError::InnerError) => return,
         };
 
         match File::create(&self.dest) {
@@ -43,15 +49,14 @@ impl Command for Export {
     }
 }
 
-impl From::<(String, Box::<dyn EncryptionStrategy>, bool)> for Export {
-    fn from((dest, encryption_strategy, clear): (String, Box::<dyn EncryptionStrategy>, bool)) -> Export {
-        Export { dest, encryption_strategy, clear }
+impl From::<(String, bool)> for Export {
+    fn from((dest, clear): (String, bool)) -> Export {
+        Export { dest, clear }
     }
 }
 
 pub struct Import {
     pub src: String,
-    pub encryption_strategy: Box<dyn EncryptionStrategy>,
     pub clear: bool,
 }
 
@@ -65,7 +70,15 @@ impl Command for Import {
             },
         };
 
-        let str_model = match self.encryption_strategy.decrypt(&data) {
+        let pass = match dialog::ask_for_password(false) {
+            Ok(p) => p,
+            Err(err) => {
+                msg::pass_read_error(err);
+                return;
+            }
+        };
+
+        let str_model = match encryption::decrypt(&data, &pass) {
             Ok(bytes) => match String::from_utf8(bytes) {
                 Ok(s) => s,
                 Err(_) => {
@@ -73,11 +86,10 @@ impl Command for Import {
                     return;
                 },
             },
-            Err(ESError::EncryptionError) => {
+            Err(_) => {
                 msg::decryption_failed();
                 return;
             },
-            Err(ESError::InnerError) => return,
         };
 
         let imported_model = match context::model_from_string(str_model) {
@@ -101,9 +113,9 @@ impl Command for Import {
     }
 }
 
-impl From::<(String, Box::<dyn EncryptionStrategy>, bool)> for Import {
-    fn from((src, encryption_strategy, clear): (String, Box::<dyn EncryptionStrategy>, bool)) -> Import {
-        Import { src, encryption_strategy, clear }
+impl From::<(String, bool)> for Import {
+    fn from((src, clear): (String, bool)) -> Import {
+        Import { src, clear }
     }
 }
 
