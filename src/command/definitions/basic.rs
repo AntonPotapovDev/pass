@@ -10,7 +10,7 @@ use clipboard::{ClipboardContext, ClipboardProvider};
 pub struct List;
 
 impl Command for List {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         let mut list = context.model.iter()
             .map(|(key, _value)| key)
             .collect::<Vec<&String>>();
@@ -26,7 +26,7 @@ pub struct Show {
 }
 
 impl Command for Show {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         match context.model.get(&self.key) {
             Some(pass) => println!("{}", pass),
             None => msg::no_such_key(),
@@ -45,11 +45,11 @@ pub struct Add {
 }
 
 impl Command for Add {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         match context.model.contains_key(&self.key) {
             true => msg::already_exist(),
             false => match dialog::ask_for_password(true) {
-                Ok(pass) => { context.model.insert(self.key.clone(), pass); },
+                Ok(pass) => { context.model.insert(self.key, pass); },
                 Err(err) => msg::pass_read_error(err),
             }
         }
@@ -67,7 +67,7 @@ pub struct Remove {
 }
 
 impl Command for Remove {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         match context.model.contains_key(&self.key) {
             true => match dialog::confirm(msg::strings::RM) {
                 Ok(true) => { context.model.remove(&self.key); },
@@ -90,10 +90,10 @@ pub struct Update {
 }
 
 impl Command for Update {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         match context.model.contains_key(&self.key) {
             true => match dialog::ask_for_password(true) {
-                Ok(pass) => { context.model.insert(self.key.clone(), pass); },
+                Ok(pass) => { context.model.insert(self.key, pass); },
                 Err(err) => msg::pass_read_error(err),
             },
             false => msg::no_such_key(),
@@ -113,7 +113,7 @@ pub struct Rename {
 }
 
 impl Command for Rename {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         if !context.model.contains_key(&self.old) {
             msg::no_such_key();
             return;
@@ -125,7 +125,7 @@ impl Command for Rename {
         }
 
         let value = context.model.remove(&self.old).unwrap();
-        context.model.insert(self.new.clone(), value);
+        context.model.insert(self.new, value);
     }
 }
 
@@ -138,7 +138,7 @@ impl From<(String, String)> for Rename {
 pub struct Clear;
 
 impl Command for Clear {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         match dialog::confirm(msg::strings::CLEAR) {
             Ok(answer) => if answer { context.model.clear(); },
             Err(_) => msg::input_failed(),
@@ -151,7 +151,7 @@ pub struct Copy {
 }
 
 impl Command for Copy {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         match context.model.get(&self.key) {
             Some(value) => {
                 let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();

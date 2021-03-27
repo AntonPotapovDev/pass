@@ -72,8 +72,8 @@ pub fn model_from_string(s: String) -> Result<PassListModel, ()> {
     Ok(model)
 }
 
-pub fn merge_models(f: &PassListModel, s: &mut PassListModel) {
-    f.into_iter().for_each(|(key, value)| { s.insert(key.clone(), value.clone()); });
+pub fn merge_models(f: PassListModel, s: &mut PassListModel) {
+    f.into_iter().for_each(|(key, value)| { s.insert(key, value); });
 }
 
 pub fn find_collisions<'a>(f: &'a PassListModel, s: &PassListModel) -> Vec<&'a String> {
@@ -84,16 +84,4 @@ pub fn find_collisions<'a>(f: &'a PassListModel, s: &PassListModel) -> Vec<&'a S
         })
         .map(|(key, _value)| key)
         .collect::<Vec<&'a String>>()
-}
-
-pub fn safe_merge<'a>(f: &'a PassListModel, s: &mut PassListModel) -> Result<(), Vec<&'a String>> {
-    let collisions = find_collisions(&f, s);
-
-    match collisions.len() > 0 {
-        true => Err(collisions),
-        false => {
-            merge_models(f, s);
-            Ok(())
-        },
-    }
 }

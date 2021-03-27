@@ -9,5 +9,5 @@ pub use misc::*;
 use super::tools;
 
 pub trait Command {
-    fn execute(&self, model: &mut crate::context::Context);
+    fn execute(self: Box<Self>, model: &mut crate::context::Context);
 }

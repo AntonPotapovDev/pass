@@ -14,7 +14,7 @@ pub struct Export {
 }
 
 impl Command for Export {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         let mut file = File::open(&context.data_file_path).unwrap();
 
         let mut data = vec![];
@@ -61,7 +61,7 @@ pub struct Import {
 }
 
 impl Command for Import {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         let data = match read_file(&self.src) {
             Ok(d) => d,
             Err(_) => {
@@ -105,10 +105,15 @@ impl Command for Import {
             return;
         }
 
-        if let Err(collisions) = context::safe_merge(&imported_model, &mut context.model) {
-            msg::collision_detected();
-            collisions.iter().for_each(|c| println!("{}", c));
-            merger::interactive_merge(imported_model, &mut context.model);
+        let collisions = context::find_collisions(&imported_model, &mut context.model);
+
+        match collisions.len() > 0 {
+            true => {
+                msg::collision_detected();
+                collisions.iter().for_each(|c| println!("{}", c));
+                merger::interactive_merge(imported_model, &mut context.model);
+            },
+            false => context::merge_models(imported_model, &mut context.model),
         }
     }
 }

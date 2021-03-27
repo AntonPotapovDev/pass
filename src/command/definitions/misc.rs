@@ -10,7 +10,7 @@ pub struct MultiAdd {
 }
 
 impl Command for MultiAdd {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         let pass = match dialog::ask_for_password(true) {
             Ok(p) => p,
             Err(err) => {
@@ -21,12 +21,17 @@ impl Command for MultiAdd {
 
         let mut extension = PassListModel::new();
 
-        self.keys.iter().for_each(|k| { extension.insert(k.clone(), pass.clone()); });
+        self.keys.into_iter().for_each(|k| { extension.insert(k, pass.clone()); });
 
-        if let Err(collisions) = context::safe_merge(&extension, &mut context.model) {
-            msg::collision_detected();
-            collisions.iter().for_each(|c| println!("{}", c));
-            merger::interactive_merge(extension, &mut context.model);
+        let collisions = context::find_collisions(&extension, &mut context.model);
+
+        match collisions.len() > 0 {
+            true => {
+                msg::collision_detected();
+                collisions.iter().for_each(|c| println!("{}", c));
+                merger::interactive_merge(extension, &mut context.model);
+            },
+            false => context::merge_models(extension, &mut context.model),
         }
     }
 }
@@ -42,7 +47,7 @@ pub struct MultiRemove {
 }
 
 impl Command for MultiRemove {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         match dialog::confirm(msg::strings::MRM) {
             Ok(true) => self.keys.iter().for_each(|key| {
                 if !context.model.contains_key(key) {
@@ -62,7 +67,7 @@ pub struct MultiUpdate {
 }
 
 impl Command for MultiUpdate {
-    fn execute(&self, context: &mut Context) {
+    fn execute(self: Box<Self>, context: &mut Context) {
         let pass = match dialog::ask_for_password(true) {
             Ok(p) => p,
             Err(err) => {
@@ -71,14 +76,14 @@ impl Command for MultiUpdate {
             },
         };
 
-        for key in &self.keys {
-            if !context.model.contains_key(key) {
-                msg::no_such_key_warning(key);
-                continue;
+        self.keys.into_iter().for_each(|key| {
+            if !context.model.contains_key(&key) {
+                msg::no_such_key_warning(&key);
+                return;
             }
 
-            context.model.insert(key.clone(), pass.clone());
-        }
+            context.model.insert(key, pass.clone());
+        });
     }
 }
 

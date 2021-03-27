@@ -47,7 +47,7 @@ fn accept_old(new: PassListModel, old: &mut PassListModel) {
 }
 
 fn accept_new(new: PassListModel, old: &mut PassListModel) {
-    context::merge_models(&new, old);
+    context::merge_models(new, old);
 }
 
 fn merge(new: PassListModel, old: &mut PassListModel) {
