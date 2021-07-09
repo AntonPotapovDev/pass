@@ -13,6 +13,7 @@ pub const CMD_COPY: &str = "copy";
 pub const CMD_MULTIADD: &str = "madd";
 pub const CMD_MULTIREMOVE: &str = "mrm";
 pub const CMD_MULTIUPDATE: &str = "mupd";
+pub const CMD_PASTE: &str = "paste";
 
 pub fn resolve_command(cmd: &str) -> Result<Box<dyn builders::CmdBuilder>, ()> {
     match cmd {
@@ -29,6 +30,7 @@ pub fn resolve_command(cmd: &str) -> Result<Box<dyn builders::CmdBuilder>, ()> {
         CMD_MULTIADD => Ok(Box::new(builders::MultiAddBuilder)),
         CMD_MULTIREMOVE => Ok(Box::new(builders::MultiRemoveBuilder)),
         CMD_MULTIUPDATE => Ok(Box::new(builders::MultiUpdateBuilder)),
+        CMD_PASTE => Ok(Box::new(builders::PasteBuilder)),
         _ => Err(()),
     }
 }

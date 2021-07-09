@@ -157,6 +157,17 @@ impl CmdBuilder for MultiUpdateBuilder {
     }
 }
 
+pub struct PasteBuilder;
+impl CmdBuilder for PasteBuilder {
+    fn build(&self, mut args: Vec<String>) -> Result<Box<dyn Command>, ()> {
+        build_from_one::<Paste>(&mut args)
+    }
+
+    fn cmd_usage(&self) -> String {
+        String::from(SINGLE_KEY_USAGE)
+    }
+}
+
 fn unpack_one(args: &mut Vec<String>, index: usize) -> String {
     std::mem::replace(&mut args[index], String::new())
 }

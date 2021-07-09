@@ -167,3 +167,28 @@ impl From<String> for Copy {
         Copy { key }
     }
 }
+
+pub struct Paste {
+    pub key: String,
+}
+
+impl Command for Paste {
+    fn execute(self: Box<Self>, context: &mut Context) {
+        match context.model.contains_key(&self.key) {
+            true => msg::already_exist(),
+            false => {
+                let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+                match ctx.get_contents() {
+                    Ok(pass) => { context.model.insert(self.key, pass); },
+                    Err(_) => msg::pass_read_error(dialog::PassReadError::SystemError),
+                }
+            }
+        }
+    }
+}
+
+impl From<String> for Paste {
+    fn from(key: String) -> Paste {
+        Paste { key }
+    }
+}

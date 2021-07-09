@@ -58,6 +58,7 @@ fn help() {
     println!("Usage: pass <command> [args]");
     println!("Supported commands:");
     println!("  {:10} - add new password", CMD_ADD);
+    println!("  {:10} - add new password with the clipboard content", CMD_PASTE);
     println!("  {:10} - remove password", CMD_REMOVE);
     println!("  {:10} - update password", CMD_UPDATE);
     println!("  {:10} - show all keys", CMD_LIST);
