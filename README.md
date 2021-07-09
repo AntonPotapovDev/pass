@@ -10,11 +10,11 @@ pass
 ```
 By default, for better usability, "pass" stores added passwords without encryption. For maximum security, you can export passwords after each session and import them before each session. The easiest way to do this is to use the `export`/`import` commands with the `-c` flag, which will clear all unencrypted data.
 ```batchfile
-# decrypt and import your passwords, overwrite existing data
-pass import C:/folder/data -c
+# decrypt and import your passwords from default source file
+pass import
 
 # encrypt end export your passwords, remove original data
-pass export C:/folder/data -c
+pass export -c
 ```
 
 ## Building
