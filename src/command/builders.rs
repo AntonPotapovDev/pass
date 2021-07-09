@@ -4,8 +4,8 @@ use super::definitions::*;
 const CLEAR_FLAG: &str = "-c";
 const SINGLE_KEY_USAGE: &str = "<key>";
 const KEY_LIST_USAGE: &str = "<key> [, <key>, <key>, ... ]";
-const IMPORT_PATH: &str = "<from_path>";
-const EXPORT_PATH: &str = "<export_path>";
+const IMPORT_PATH: &str = "[<from_path>]";
+const EXPORT_PATH: &str = "[<export_path>]";
 const FLAG: &str = "[-c] (c - for clear)";
 
 pub trait CmdBuilder {
@@ -207,13 +207,31 @@ fn build_from_list<T>(args: Vec<String>) -> Result<Box<dyn Command>, ()>
 
 fn build_impexp<T>(args: &mut Vec<String>) -> Result<Box<dyn Command>, ()>
     where T: 'static + From::<(String, bool)> + Command {
-    match args.len() >= 1 {
-        true => {
-            let data = unpack_one(args, 0);
-            let clear = if args.len() > 1 { &unpack_one(args, 1) == CLEAR_FLAG } else { false };
-            let cmd = Box::new(T::from((data, clear)));
-            Ok(cmd)
-        },
-        false => Err(())
+    if args.len() > 2 {
+        return Err(());
     }
+
+    let mut flags_count = 0;
+    let mut path_idxs = vec![];
+
+    for (idx, arg) in args.iter().enumerate() {
+        match arg.as_str() {
+            CLEAR_FLAG => flags_count += 1,
+            _ => path_idxs.push(idx),
+        }
+    }
+
+    let clear = match flags_count {
+        0 => false,
+        1 => true,
+        _ => return Err(()),
+    };
+
+    let path = match path_idxs.len() {
+        0 => String::new(),
+        1 => unpack_one(args, path_idxs[0]),
+        _ => return Err(()),
+    };
+
+    Ok(Box::new(T::from((path, clear))))
 }

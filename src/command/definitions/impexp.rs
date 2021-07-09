@@ -13,6 +13,8 @@ pub struct Export {
     pub clear: bool,
 }
 
+const DEFAULT_IMPORT_EXPORT_FILENAME: &str = "data_exported";
+
 impl Command for Export {
     fn execute(self: Box<Self>, context: &mut Context) {
         let mut file = File::open(&context.data_file_path).unwrap();
@@ -36,13 +38,15 @@ impl Command for Export {
             },
         };
 
-        match File::create(&self.dest) {
+        let dest_path = if self.dest.len() > 0 { self.dest } else { make_default_path() };
+
+        match File::create(&dest_path) {
             Ok(mut f) => {
                 f.write(&result).unwrap();
                 if self.clear { context.model.clear() }
             },
             Err(_) => {
-                msg::failed_writing(&self.dest);
+                msg::failed_writing(&dest_path);
                 return;
             }
         }
@@ -62,10 +66,12 @@ pub struct Import {
 
 impl Command for Import {
     fn execute(self: Box<Self>, context: &mut Context) {
-        let data = match read_file(&self.src) {
+        let src_path = if self.src.len() > 0 { self.src } else { make_default_path() };
+
+        let data = match read_file(&src_path) {
             Ok(d) => d,
             Err(_) => {
-                msg::failed_reading(&self.src);
+                msg::failed_reading(&src_path);
                 return;
             },
         };
@@ -135,4 +141,11 @@ fn read_file(path: &str) -> Result<Vec<u8>, ()> {
         },
         Err(_) => return Err(()),
     }
+}
+
+fn make_default_path() -> String {
+    let mut dir = std::env::current_exe().unwrap();
+    dir.pop();
+    dir.push(DEFAULT_IMPORT_EXPORT_FILENAME);
+    String::from(dir.to_str().unwrap())
 }
